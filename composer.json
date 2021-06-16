@@ -1,0 +1,19 @@
+{
+    "name": "olafr9500/readyapi",
+    "description": "Module PHP pour créer une API REST rapidement",
+    "authors": [
+        {
+            "name": "Olafr Af Munso",
+            "email": "olafr.af.munso@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "license": "MIT",
+    "require": {
+        "php": ">=5.4",
+        "firebase/php-jwt":"*"
+    },
+    "post-install-cmd" : [
+        "Xcopy /E /I vendor\\firebase\\php-jwt\\src lib\\php-jwt-master\\src"
+    ]
+}
