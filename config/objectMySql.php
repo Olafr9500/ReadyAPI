@@ -63,22 +63,25 @@ class ObjectMySql implements IConn
     {
         if (isset($this->id)) {
             $stmt = $this->_conn->prepare("SELECT * from `" . $this->_tableName . "` where `".$this->_fields[0]."` = ?");
-            $stmt->execute(array($this->id));
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!empty($result)) {
-                foreach ($result as $key => $row) {
-                    if ($this->_fieldsRename[$key]) {
-                        if (gettype($row) == "string") {
-                            $row = utf8_encode($row);
+            if ($stmt->execute(array($this->id))) {
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                if (!empty($result)) {
+                    foreach ($result as $key => $row) {
+                        if ($this->_fieldsRename[$key]) {
+                            if (gettype($row) == "string") {
+                                $row = utf8_encode($row);
+                            }
+                            $this->__set($this->_fieldsRename[$key], $row);
+                        } else {
+                            $this->__set($key, $row);
                         }
-                        $this->__set($this->_fieldsRename[$key], $row);
-                    } else {
-                        $this->__set($key, $row);
                     }
+                    return true;
+                } else {
+                    $this->errorMessage = "Empty result sql";
                 }
-                return true;
             } else {
-                $this->errorMessage = "Empty result sql";
+                $this->errorMessage = $stmt->errorInfo();
             }
         } else {
             $this->errorMessage = "No id set";
@@ -107,7 +110,7 @@ class ObjectMySql implements IConn
         return false;
     }
 
-    public function readBy($value, $index, $condition, $orderby = 0, $sync = "asc")
+    public function readBy($index, $value, $condition, $orderby = 0, $sync = "asc")
     {
         switch ($condition) {
             case "=":
