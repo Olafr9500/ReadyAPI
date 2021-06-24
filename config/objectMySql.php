@@ -49,7 +49,9 @@ class ObjectMySql implements IConn
         }
         $stmt = $this->_conn->prepare(substr($query, 0, -2));
         if ($stmt->execute($values)) {
-            $this->id = $this->_conn->lastInsertId();
+            if (!$setId) {
+                $this->id = $this->_conn->lastInsertId();
+            }
             return true;
         } else {
             $this->errorMessage = $stmt->errorInfo();
