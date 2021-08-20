@@ -47,7 +47,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 unset($sample->errorMessage);
                             }
                         }
-                        if ((isset($_POST["nom"])) && (isset($_POST["directory"]))) {
+                        $checkVariablesSet = true;
+                        foreach ($sample->_fieldsRename as $column) {
+                            if (($column != "id") && ($column != "update")) {
+                                $checkVariablesSet &= isset($_POST[$column]);
+                            }
+                        }
+                        if ($checkVariablesSet) {
                             $sample->nom = $_POST["nom"];
                             $sample->directory = $_POST["directory"];
                             $sample->update = date("Y-m-d");
@@ -65,7 +71,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 displayError("Empty information", array("miss" => $sample->isEmpty()));
                             }
                         } else {
-                            displayError("Uninitialized variables", array("post" => array("nom" => (isset($_POST["nom"]) ? 'true' : 'false'), "directory" => (isset($_POST["directory"]) ? 'true' : 'false'))));
+                            $variables = array();
+                            foreach ($sample->_fieldsRename as $column) {
+                                if (($column != "id") && ($column != "update")) {
+                                    $variables[$column] = (isset($_POST[$column]) ? 'true' : 'false');
+                                }
+                            }
+                            displayError("Uninitialized variables", array("post" => $variables));
                         }
                     } else {
                         displayError("Incorrect login token", array("messageError" => $user->errorMessage));
