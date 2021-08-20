@@ -25,71 +25,79 @@ use ReadyAPI\User;
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $database = new Database();
     if (!is_null($database->conn)) {
-        if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
-            $jwt = $matches[1];
-            if ($jwt) {
-                $jwt = JWT::decode($jwt, $key, array('HS256'));
-                if (checkJWT($jwt)) {
-                    $data = $jwt->data;
-                    $user = new User($database->conn);
-                    $user->mail = $data->mail;
-                    $user->password = $jwt->data->password;
-                    if ($user->connection()) {
-                        $sample = new SampleObject($database->conn);
-                        $setId = false;
-                        if (isset($_POST["id"])) {
-                            $sample->id = $_POST["id"];
-                            if ($sample->read()) {
-                                displayError("Id already existing", array("id" => $_POST["id"]));
-                                exit;
-                            } else {
-                                $setId = true;
-                                unset($sample->errorMessage);
-                            }
-                        }
-                        $checkVariablesSet = true;
-                        foreach ($sample->_fieldsRename as $column) {
-                            if (($column != "id") && ($column != "update")) {
-                                $checkVariablesSet &= isset($_POST[$column]);
-                            }
-                        }
-                        if ($checkVariablesSet) {
-                            $sample->nom = $_POST["nom"];
-                            $sample->directory = $_POST["directory"];
-                            $sample->update = date("Y-m-d");
-                            if ($sample->isEmpty() === false) {
-                                if ($sample->isDataCorrect() === true) {
-                                    if ($sample->create($setId)) {
-                                        displayError("no", array("response" => $sample));
-                                    } else {
-                                        displayError("Cannot add item", array("message" => $sample->errorMessage));
-                                    }
-                                } else {
-                                    displayError("Incorrect information", array("fail" => $sample->isDataCorrect()));
-                                }
-                            } else {
-                                displayError("Empty information", array("miss" => $sample->isEmpty()));
-                            }
-                        } else {
-                            $variables = array();
-                            foreach ($sample->_fieldsRename as $column) {
-                                if (($column != "id") && ($column != "update")) {
-                                    $variables[$column] = (isset($_POST[$column]) ? 'true' : 'false');
-                                }
-                            }
-                            displayError("Uninitialized variables", array("post" => $variables));
+        $checkSecure = true;
+        if (SECURE_API) {
+            if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
+                $jwt = $matches[1];
+                if ($jwt) {
+                    $jwt = JWT::decode($jwt, $key, array('HS256'));
+                    if (checkJWT($jwt)) {
+                        $data = $jwt->data;
+                        $user = new User($database->conn);
+                        $user->mail = $data->mail;
+                        $user->password = $jwt->data->password;
+                        if (!$user->connection()) {
+                            displayError("Incorrect login token", array("messageError" => $user->errorMessage));
+                            $checkSecure = false;
                         }
                     } else {
-                        displayError("Incorrect login token", array("messageError" => $user->errorMessage));
+                        displayError("Incorrect login token", array("checkToken"=>"fail"));
+                        $checkSecure = false;
                     }
                 } else {
-                    displayError("Incorrect login token", array("checkToken"=>"fail"));
+                    displayError("No token initialized", array("matches" => $matches));
+                    $checkSecure = false;
                 }
             } else {
-                displayError("No token initialized", array("matches" => $matches));
+                displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
+                $checkSecure = false;
             }
-        } else {
-            displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
+        }
+        if ($checkSecure) {
+            $sample = new SampleObject($database->conn);
+            $setId = false;
+            if (isset($_POST["id"])) {
+                $sample->id = $_POST["id"];
+                if ($sample->read()) {
+                    displayError("Id already existing", array("id" => $_POST["id"]));
+                    exit;
+                } else {
+                    $setId = true;
+                    unset($sample->errorMessage);
+                }
+            }
+            $checkVariablesSet = true;
+            foreach ($sample->_fieldsRename as $column) {
+                if (($column != "id") && ($column != "update")) {
+                    $checkVariablesSet &= isset($_POST[$column]);
+                }
+            }
+            if ($checkVariablesSet) {
+                $sample->nom = $_POST["nom"];
+                $sample->directory = $_POST["directory"];
+                $sample->update = date("Y-m-d");
+                if ($sample->isEmpty() === false) {
+                    if ($sample->isDataCorrect() === true) {
+                        if ($sample->create($setId)) {
+                            displayError("no", array("response" => $sample));
+                        } else {
+                            displayError("Cannot add item", array("message" => $sample->errorMessage));
+                        }
+                    } else {
+                        displayError("Incorrect information", array("fail" => $sample->isDataCorrect()));
+                    }
+                } else {
+                    displayError("Empty information", array("miss" => $sample->isEmpty()));
+                }
+            } else {
+                $variables = array();
+                foreach ($sample->_fieldsRename as $column) {
+                    if (($column != "id") && ($column != "update")) {
+                        $variables[$column] = (isset($_POST[$column]) ? 'true' : 'false');
+                    }
+                }
+                displayError("Uninitialized variables", array("post" => $variables));
+            }
         }
     } else {
         displayError("Connection database fail", array("messageError" => $database->errorMessage));

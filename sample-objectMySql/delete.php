@@ -25,42 +25,50 @@ use ReadyAPI\User;
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $database = new Database();
     if (!is_null($database->conn)) {
-        if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
-            $jwt = $matches[1];
-            if ($jwt) {
-                $jwt = JWT::decode($jwt, $key, array('HS256'));
-                if (checkJWT($jwt)) {
-                    $data = $jwt->data;
-                    $user = new User($database->conn);
-                    $user->mail = $data->mail;
-                    $user->password = $data->password;
-                    if ($user->connection()) {
-                        if (isset($_POST["id"])) {
-                            $sample = new SampleObject($database->conn);
-                            $sample->id = $_POST["id"];
-                            if ($sample->read()) {
-                                if ($sample->delete()) {
-                                    displayError("no", array("response" => $sample));
-                                } else {
-                                    displayError("Cannot delete item", array("message" => $sample->errorMessage));
-                                }
-                            } else {
-                                displayError("No element with this id", array("messageError" => $sample->errorMessage));
-                            }
-                        } else {
-                            displayError("Uninitialized variable", array("post" => array("id" => (isset($_POST["id"]) ? 'true' : 'false'))));
+        $checkSecure = true;
+        if (SECURE_API) {
+            if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
+                $jwt = $matches[1];
+                if ($jwt) {
+                    $jwt = JWT::decode($jwt, $key, array('HS256'));
+                    if (checkJWT($jwt)) {
+                        $data = $jwt->data;
+                        $user = new User($database->conn);
+                        $user->mail = $data->mail;
+                        $user->password = $data->password;
+                        if (!$user->connection()) {
+                            displayError("Incorrect login token", array("messageError" => $user->errorMessage));
+                            $checkSecure = false;
                         }
                     } else {
-                        displayError("Incorrect login token", array("messageError" => $user->errorMessage));
+                        displayError("Incorrect login token", array("checkToken"=>checkJWT($jwt)));
+                        $checkSecure = false;
                     }
                 } else {
-                    displayError("Incorrect login token", array("checkToken"=>checkJWT($jwt)));
+                    displayError("No token initialized", array("matches" => $matches));
+                    $checkSecure = false;
                 }
             } else {
-                displayError("No token initialized", array("matches" => $matches));
+                displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
+                $checkSecure = false;
             }
-        } else {
-            displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
+        }
+        if ($checkSecure) {
+            if (isset($_POST["id"])) {
+                $sample = new SampleObject($database->conn);
+                $sample->id = $_POST["id"];
+                if ($sample->read()) {
+                    if ($sample->delete()) {
+                        displayError("no", array("response" => $sample));
+                    } else {
+                        displayError("Cannot delete item", array("message" => $sample->errorMessage));
+                    }
+                } else {
+                    displayError("No element with this id", array("messageError" => $sample->errorMessage));
+                }
+            } else {
+                displayError("Uninitialized variable", array("post" => array("id" => (isset($_POST["id"]) ? 'true' : 'false'))));
+            }
         }
     } else {
         displayError("Connection database fail", array("messageError" => $database->errorMessage));
