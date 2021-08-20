@@ -13,6 +13,8 @@ class ObjectMySql implements IConn
     private $_fieldsRename = [];
     public $id;
 
+    public $errorMessage;
+
     public function __construct($db, $nameBase, $filedsRename = ["id"])
     {
         $this->_conn = $db;
@@ -91,7 +93,7 @@ class ObjectMySql implements IConn
 
     public function readAll($orderby = 0, $sync = "asc")
     {
-        $stmt = $this->_conn->prepare("SELECT * from `" . $this->_tableName . "` ORDER BY `". $this->_fields[$orderby] ."` ".$sync);
+        $stmt = $this->_conn->prepare("SELECT * from `" . $this->_tableName . "` ORDER BY `". $this->_fields[$orderby] ."` ".$sync." LIMIT 200");
         if ($stmt->execute()) {
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             if (count($result) > 0) {
@@ -121,7 +123,7 @@ class ObjectMySql implements IConn
             case ">=":
             case "<=":
             case "LIKE":
-                $stmt = $this->_conn->prepare("SELECT * FROM `".$this->_tableName."` WHERE `". $this->_fields[$index]."` ".$condition." ? ORDER BY ".$orderby." ".$sync);
+                $stmt = $this->_conn->prepare("SELECT * FROM `".$this->_tableName."` WHERE `". $this->_fields[$index]."` ".$condition." ? ORDER BY ".$this->_fields[$orderby]." ".$sync."  LIMIT 200");
                 if ($stmt->execute(array($value))) {
                     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     if (count($result) > 0) {
@@ -145,7 +147,7 @@ class ObjectMySql implements IConn
                     foreach ($value as $row) {
                         $input .= "?,";
                     }
-                    $query = $query.substr($input, 0, strlen($input) - 1).") ORDER BY ".$orderby." ".$sync;
+                    $query = $query.substr($input, 0, strlen($input) - 1).") ORDER BY ".$this->_fields[$orderby]." ".$sync."  LIMIT 200";
                     $stmt = $this->_conn->prepare($query);
                     if ($stmt->execute($value)) {
                         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -162,11 +164,13 @@ class ObjectMySql implements IConn
                     } else {
                         $this->errorMessage = $stmt->errorInfo();
                     }
+                } else {
+                    $this->errorMessage = "Mauvais type de données entrée";
                 }
                 break;
             case "BETWEEN":
                 if ((gettype($value) == "array") && (count($value) == 2)) {
-                    $query = "SELECT * FROM `".$this->_tableName."` WHERE `". $this->_fields[$index]."` BETWEEN ? AND ? ORDER BY ".$orderby." ".$sync;
+                    $query = "SELECT * FROM `".$this->_tableName."` WHERE `". $this->_fields[$index]."` BETWEEN ? AND ? ORDER BY ".$this->_fields[$orderby]." ".$sync."  LIMIT 200";
                     $stmt = $this->_conn->prepare($query);
                     if ($stmt->execute($value)) {
                         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -187,7 +191,7 @@ class ObjectMySql implements IConn
                 break;
             case "IS NULL":
             case "IS NOT NULL":
-                $query = "SELECT * FROM `".$this->_tableName."` WHERE `". $this->_fields[$index]."` ".$condition." ORDER BY ".$orderby." ".$sync;
+                $query = "SELECT * FROM `".$this->_tableName."` WHERE `". $this->_fields[$index]."` ".$condition." ORDER BY ".$orderby." ".$sync."  LIMIT 200";
                 $stmt = $this->_conn->prepare($query);
                 if ($stmt->execute(array($value))) {
                     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
