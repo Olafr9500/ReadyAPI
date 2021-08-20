@@ -6,7 +6,6 @@ use PDOException;
 
 class Database
 {
-    /* database on OVH */
     private $_host = "<dbHost>";
     private $_dbName = "<dbName>";
     private $_userName = "<user>";

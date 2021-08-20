@@ -4,7 +4,9 @@ namespace ReadyAPI;
 use PDO;
 
 include_once 'iconn.php';
-
+/**
+ * Class table MySql
+ */
 class ObjectMySql implements IConn
 {
     private $_conn;
@@ -12,9 +14,14 @@ class ObjectMySql implements IConn
     private $_fields = [];
     private $_fieldsRename = [];
     public $id;
-
     public $errorMessage;
-
+    /**
+     * Constructor of the MySql object
+     *
+     * @param PDO $db Database connector
+     * @param string $nameBase Database Name
+     * @param array $filedsRename List of object variables in the same order as the database columns
+     */
     public function __construct($db, $nameBase, $filedsRename = ["id"])
     {
         $this->_conn = $db;
@@ -38,7 +45,12 @@ class ObjectMySql implements IConn
     {
         $this->$property=$value;
     }
-
+    /**
+     * Add a new entry for the object in the database
+     *
+     * @param boolean $setId Activate auto increment or not
+     * @return boolean Insertion validation status
+     */
     public function create($setId = false)
     {
         $query = "insert into `". $this->_tableName."` set ";
@@ -60,7 +72,11 @@ class ObjectMySql implements IConn
         }
         return false;
     }
-
+    /**
+     * Retrieves data of the object in the database
+     *
+     * @return void Data recovery status
+     */
     public function read()
     {
         if (isset($this->id)) {
@@ -90,7 +106,13 @@ class ObjectMySql implements IConn
         }
         return false;
     }
-
+    /**
+     * Retrieves all of the object's entries in the database
+     *
+     * @param integer $orderby
+     * @param string $sync
+     * @return array|false List of database entries or false
+     */
     public function readAll($orderby = 0, $sync = "asc")
     {
         $stmt = $this->_conn->prepare("SELECT * from `" . $this->_tableName . "` ORDER BY `". $this->_fields[$orderby] ."` ".$sync." LIMIT 200");
