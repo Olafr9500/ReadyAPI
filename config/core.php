@@ -6,6 +6,7 @@ error_reporting(E_ALL);
 
 date_default_timezone_set('Europe/Paris');
 
+// TODO Mot de passe à modifier
 $key = "<password>";
 $issued_at = time();
 $expiration_time = $issued_at + (60 * 60 * 24 * 30);
