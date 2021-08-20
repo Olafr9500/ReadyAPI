@@ -73,9 +73,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
             if ($checkVariablesSet) {
-                $sample->nom = $_POST["nom"];
-                $sample->directory = $_POST["directory"];
-                $sample->update = date("Y-m-d");
+                foreach ($sample->_fieldsRename as $column) {
+                    if (($column != "id")) {
+                        $sample->$column = ($column == "update" ? date("Y-m-d") : $_POST[$column]);
+                    }
+                }
                 if ($sample->isEmpty() === false) {
                     if ($sample->isDataCorrect() === true) {
                         if ($sample->create($setId)) {

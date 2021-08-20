@@ -58,9 +58,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $sample = new SampleObject($database->conn);
                 $sample->id = $_POST["id"];
                 if ($sample->read()) {
-                    $sample->nom = (isset($_POST["nom"]) ? $_POST["nom"] : $sample->nom);
-                    $sample->directory = (isset($_POST["directory"]) ? $_POST["directory"] : $sample->directory);
-                    $sample->update = date("Y-m-d");
+                    foreach ($sample->_fieldsRename as $column) {
+                        if (($column != "id")) {
+                            $sample->$column = ($column == "update" ? date("Y-m-d") : (isset($_POST[$column]) ? $_POST[$column] : $sample->$column));
+                        }
+                    }
                     if ($sample->isEmpty() === false) {
                         if ($sample->isDataCorrect() === true) {
                             if ($sample->update()) {
