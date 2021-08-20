@@ -2,7 +2,7 @@
 namespace ReadyAPI;
 
 /**
- * Interface pour lié le systeme de données avec les objects
+ * Interface to link the data system with the objects
  */
 interface IConn
 {
