@@ -2,8 +2,13 @@
 ReadyAPI is a PHP module to create REST API quickly
 ## Install
 Import with Git :
-```sh
+```bash
 $ git clone https://github.com/Olafr9500/ReadyAPI.git <your Project>/api
+```
+
+Use composer :
+```bash
+$ composer require olafr9500/readyapi
 ```
 ## How to use it
 ### MySQL
