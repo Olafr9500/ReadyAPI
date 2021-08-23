@@ -13,10 +13,7 @@ include_once '../config/objectMySql.php';
 include_once '../object/user.php';
 include_once '../object/sample-objectMySql.php';
 
-include_once '../libs/php-jwt-master/src/BeforeValidException.php';
-include_once '../libs/php-jwt-master/src/ExpiredException.php';
-include_once '../libs/php-jwt-master/src/SignatureInvalidException.php';
-include_once '../libs/php-jwt-master/src/JWT.php';
+require __DIR__ . '/vendor/autoload.php';
 
 use \Firebase\JWT\JWT;
 use ReadyAPI\Database;
