@@ -12,19 +12,6 @@ class SampleObject extends ObjectMySql
         parent::__construct($db, "document", ["id", "nom", "directory", "update"]);
     }
 
-    public function isEmpty()
-    {
-        return (
-            (empty($this->nom)) ||
-            (empty($this->directory)) ||
-            (empty($this->update))
-        ) ? array(
-            "nom" => (empty($this->nom) ? 'true' : 'false'),
-            "directory" => (empty($this->directory) ? 'true' : 'false'),
-            "update" => (empty($this->update) ? 'true' : 'false'),
-        ) : false;
-    }
-
     public function isDataCorrect()
     {
         return (
