@@ -21,5 +21,11 @@
     "require": {
         "php": ">=5.4",
         "firebase/php-jwt":"5.4.*"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "mkdir api",
+            "xcopy /E /I vendor\\olafr9500\\readyapi api"
+        ]
     }
 }
