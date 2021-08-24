@@ -26,6 +26,9 @@
         "post-install-cmd": [
             "mkdir api",
             "xcopy /E /I vendor\\olafr9500\\readyapi api"
+        ],
+        "post-package-uninstall":[
+            "rmdir /s /q api"
         ]
     }
 }
