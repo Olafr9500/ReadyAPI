@@ -23,7 +23,7 @@
         "firebase/php-jwt":"5.4.*"
     },
     "scripts": {
-        "post-install-cmd": [
+        "post-package-install": [
             "mkdir api",
             "xcopy /E /I vendor\\olafr9500\\readyapi api"
         ],
