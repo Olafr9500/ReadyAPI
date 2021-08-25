@@ -6,9 +6,9 @@ Import with Git :
 $ git clone https://github.com/Olafr9500/ReadyAPI.git <your Project>/api
 ```
 
-Use composer :
+And get the dependenties with Composer :
 ```bash
-$ composer require olafr9500/readyapi
+$ composer update
 ```
 ## How to use it
 ### MySQL

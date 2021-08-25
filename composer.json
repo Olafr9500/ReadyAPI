@@ -21,14 +21,5 @@
     "require": {
         "php": ">=5.4",
         "firebase/php-jwt":"5.4.*"
-    },
-    "scripts": {
-        "post-package-install": [
-            "mkdir api",
-            "xcopy /E /I vendor\\olafr9500\\readyapi api"
-        ],
-        "post-package-uninstall":[
-            "rmdir /s /q api"
-        ]
     }
 }
