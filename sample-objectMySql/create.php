@@ -64,15 +64,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
             $checkVariablesSet = true;
-            foreach ($sample->_fieldsRename as $column) {
-                if (($column != "id") && ($column != "update")) {
-                    $checkVariablesSet &= isset($_POST[$column]);
+            foreach ($sample->_table as $column) {
+                if (($column["Rename"] != "id") && ($column["Rename"] != "update")) {
+                    $checkVariablesSet &= isset($_POST[$column["Rename"]]);
                 }
             }
             if ($checkVariablesSet) {
-                foreach ($sample->_fieldsRename as $column) {
-                    if (($column != "id")) {
-                        $sample->$column = ($column == "update" ? date("Y-m-d") : $_POST[$column]);
+                foreach ($sample->_table as $column) {
+                    if (($column["Rename"] != "id")) {
+                        $sample->$column["Rename"] = ($column["Rename"] == "update" ? date("Y-m-d") : $_POST[$column["Rename"]]);
                     }
                 }
                 if ($sample->isEmpty() === false) {
@@ -102,5 +102,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         displayError("Connection database fail", array("messageError" => $database->errorMessage));
     }
 } else {
-    displayError("Bad request method", array("expected" => "GET", "got" =>$_SERVER["REQUEST_METHOD"]));
+    displayError("Bad request method", array("expected" => "POST", "got" =>$_SERVER["REQUEST_METHOD"]));
 }

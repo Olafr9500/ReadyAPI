@@ -64,8 +64,8 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                     displayError("No element with this id", array("messageError" => $sample->errorMessage));
                 }
             } else if ((isset($_GET["index"])) && (isset($_GET["value"])) && (isset($_GET["condition"]))) {
-                if (array_search($_GET["index"], $sample->_fieldsRename)) {
-                    $index = array_search($_GET["index"], $sample->_fieldsRename);
+                if (array_search($_GET["index"], $sample->getFieldsRename())) {
+                    $index = array_search($_GET["index"], $sample->getFieldsRename());
                     if (in_array($_GET["condition"], ["=", "!=", "<>", "<", ">", "<=", ">=","LIKE", "IN", "BETWEEN", "IS NULL", "IS NOT NULL"])) {
                         $condition = strval($_GET["condition"]);
                         $value = $_GET["value"];
@@ -119,5 +119,5 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         displayError("Connection database fail", array("messageError" => $database->errorMessage));
     }
 } else {
-    displayError("Bad request method", array("expected" => "POST", "got" =>$_SERVER["REQUEST_METHOD"]));
+    displayError("Bad request method", array("expected" => "GET", "got" =>$_SERVER["REQUEST_METHOD"]));
 }

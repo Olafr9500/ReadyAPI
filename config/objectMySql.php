@@ -28,8 +28,9 @@ class ObjectMySql implements IConn
         $stmt = $db->prepare("DESCRIBE `". $nameBase ."`");
         $stmt->execute();
         $this->_table = $stmt->fetchAll();
-        foreach ($this->_table as $row) {
-            $this->_table[$row]["Rename"] = array_shift($filedsRename);
+        foreach ($this->_table as $key => $row) {
+            $row["Rename"] = array_shift($filedsRename);
+            $this->_table[$key] = $row;
         }
     }
 
@@ -54,7 +55,7 @@ class ObjectMySql implements IConn
         $values = [];
         foreach ($this->_table as $key => $row) {
             if (($key != 0) || ($setId)) {
-                $query .= "`".$row."` = ?, ";
+                $query .= "`".$row["Field"]."` = ?, ";
                 $values[] = $this->__get($this->_table[$key]["Rename"]);
             }
         }
@@ -79,7 +80,7 @@ class ObjectMySql implements IConn
         if (isset($this->id)) {
             $stmt = $this->_conn->prepare("SELECT * from `" . $this->_tableName . "` where `".$this->_table[0]["Field"]."` = ?");
             if ($stmt->execute(array($this->id))) {
-                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                $result = $stmt->fetch(PDO::FETCH_NUM);
                 if (!empty($result)) {
                     foreach ($result as $key => $row) {
                         if ($this->_table[$key]["Rename"]) {
@@ -255,7 +256,7 @@ class ObjectMySql implements IConn
                 if (json_decode($val) == null) {
                     $val = utf8_decode($val);
                 }
-                $query .= "`".$row."` = ?, ";
+                $query .= "`".$row["Field"]."` = ?, ";
                 $values[] = $val;
             }
         }
@@ -349,6 +350,7 @@ class ObjectMySql implements IConn
                     case "varchar":
                     case "datetime":
                     case "date":
+                    case "time":
                         $value = $this->__get($row["Rename"]);
                         $ret = $ret || (empty($value));
                         $values[$row["Rename"]] = (empty($value) ? 'true' : 'false');
