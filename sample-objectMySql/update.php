@@ -13,7 +13,7 @@ include_once '../config/objectMySql.php';
 include_once '../object/user.php';
 include_once '../object/sample-objectMySql.php';
 
-require __DIR__ . '/vendor/autoload.php';
+require '../vendor/autoload.php';
 
 use \Firebase\JWT\JWT;
 use ReadyAPI\Database;
@@ -55,7 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $sample = new SampleObject($database->conn);
                 $sample->id = $_POST["id"];
                 if ($sample->read()) {
-                    foreach ($sample->_table as $column) {
+                    foreach ($sample->table as $column) {
                         if (($column["Rename"] != "id")) {
                             $sample->$column["Rename"] = ($column["Rename"] == "update" ? date("Y-m-d") : (isset($_POST[$column["Rename"]]) ? $_POST[$column["Rename"]] : $sample->$column["Rename"]));
                         }

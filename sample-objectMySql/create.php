@@ -9,11 +9,12 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 
 include_once '../config/core.php';
 include_once '../config/database.php';
+include_once '../config/iconn.php';
 include_once '../config/objectMySql.php';
 include_once '../object/user.php';
 include_once '../object/sample-objectMySql.php';
 
-require __DIR__ . '/vendor/autoload.php';
+require '../vendor/autoload.php';
 
 use \Firebase\JWT\JWT;
 use ReadyAPI\Database;
@@ -64,13 +65,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
             $checkVariablesSet = true;
-            foreach ($sample->_table as $column) {
+            foreach ($sample->table as $column) {
                 if (($column["Rename"] != "id") && ($column["Rename"] != "update")) {
                     $checkVariablesSet &= isset($_POST[$column["Rename"]]);
                 }
             }
             if ($checkVariablesSet) {
-                foreach ($sample->_table as $column) {
+                foreach ($sample->table as $column) {
                     if (($column["Rename"] != "id")) {
                         $sample->$column["Rename"] = ($column["Rename"] == "update" ? date("Y-m-d") : $_POST[$column["Rename"]]);
                     }
@@ -90,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             } else {
                 $variables = array();
-                foreach ($sample->_fieldsRename as $column) {
+                foreach ($sample->getFieldsRename() as $column) {
                     if (($column != "id") && ($column != "update")) {
                         $variables[$column] = (isset($_POST[$column]) ? 'true' : 'false');
                     }

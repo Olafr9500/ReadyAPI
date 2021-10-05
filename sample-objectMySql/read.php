@@ -13,7 +13,7 @@ include_once '../config/objectMySql.php';
 include_once '../object/user.php';
 include_once '../object/sample-objectMySql.php';
 
-require __DIR__ . '/vendor/autoload.php';
+require '../vendor/autoload.php';
 
 use \Firebase\JWT\JWT;
 use ReadyAPI\Database;
@@ -63,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 } else {
                     displayError("No element with this id", array("messageError" => $sample->errorMessage));
                 }
-            } else if ((isset($_GET["index"])) && (isset($_GET["value"])) && (isset($_GET["condition"]))) {
+            } elseif ((isset($_GET["index"])) && (isset($_GET["value"])) && (isset($_GET["condition"]))) {
                 if (array_search($_GET["index"], $sample->getFieldsRename())) {
                     $index = array_search($_GET["index"], $sample->getFieldsRename());
                     if (in_array($_GET["condition"], ["=", "!=", "<>", "<", ">", "<=", ">=","LIKE", "IN", "BETWEEN", "IS NULL", "IS NOT NULL"])) {

@@ -13,7 +13,7 @@ include_once '../config/objectMySql.php';
 include_once '../object/user.php';
 include_once '../object/sample-objectMySql.php';
 
-require __DIR__ . '/vendor/autoload.php';
+require '../vendor/autoload.php';
 
 use \Firebase\JWT\JWT;
 use ReadyAPI\Database;
