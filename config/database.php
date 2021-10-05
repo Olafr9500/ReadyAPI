@@ -1,4 +1,5 @@
 <?php
+
 namespace ReadyAPI;
 
 use PDO;
@@ -6,10 +7,10 @@ use PDOException;
 
 class Database
 {
-    private $_host = "<dbHost>";
-    private $_dbName = "<dbName>";
-    private $_userName = "<user>";
-    private $_password = "<password>";
+    protected $host = "<dbHost>";
+    protected $dbName = "<dbName>";
+    protected $userName = "<user>";
+    protected $password = "<password>";
 
     public $conn;
     public $errorMessage;
@@ -19,7 +20,7 @@ class Database
         $this->conn = null;
         $this->errorMessage = null;
         try {
-            $this->conn = new PDO("mysql:host=" . $this->_host . ";dbname=" . $this->_dbName, $this->_userName, $this->_password);
+            $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->dbName, $this->userName, $this->password);
         } catch (PDOException $exception) {
             $this->errorMessage = $exception->getMessage();
         }

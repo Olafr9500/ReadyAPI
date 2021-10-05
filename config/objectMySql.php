@@ -1,17 +1,17 @@
 <?php
+
 namespace ReadyAPI;
 
 use PDO;
 
-include_once 'iconn.php';
 /**
  * Class MySql object
  */
 class ObjectMySql implements IConn
 {
-    private $_conn;
-    private $_tableName;
-    private $_table = [];
+    private $conn;
+    private $tableName;
+    private $table = [];
     public $id;
     public $errorMessage;
     /**
@@ -23,14 +23,14 @@ class ObjectMySql implements IConn
      */
     public function __construct($db, $nameBase, $filedsRename = ["id"])
     {
-        $this->_conn = $db;
-        $this->_tableName = $nameBase;
-        $stmt = $db->prepare("DESCRIBE `". $nameBase ."`");
+        $this->conn = $db;
+        $this->tableName = $nameBase;
+        $stmt = $db->prepare("DESCRIBE `" . $nameBase . "`");
         $stmt->execute();
-        $this->_table = $stmt->fetchAll();
-        foreach ($this->_table as $key => $row) {
+        $this->table = $stmt->fetchAll();
+        foreach ($this->table as $key => $row) {
             $row["Rename"] = array_shift($filedsRename);
-            $this->_table[$key] = $row;
+            $this->table[$key] = $row;
         }
     }
 
@@ -41,7 +41,7 @@ class ObjectMySql implements IConn
 
     public function __set($property, $value)
     {
-        $this->$property=$value;
+        $this->$property = $value;
     }
     /**
      * Add a new entry for the object in the database
@@ -51,18 +51,18 @@ class ObjectMySql implements IConn
      */
     public function create($setId = false)
     {
-        $query = "insert into `". $this->_tableName."` set ";
+        $query = "insert into `" . $this->tableName . "` set ";
         $values = [];
-        foreach ($this->_table as $key => $row) {
+        foreach ($this->table as $key => $row) {
             if (($key != 0) || ($setId)) {
-                $query .= "`".$row["Field"]."` = ?, ";
-                $values[] = $this->__get($this->_table[$key]["Rename"]);
+                $query .= "`" . $row["Field"] . "` = ?, ";
+                $values[] = $this->__get($this->table[$key]["Rename"]);
             }
         }
-        $stmt = $this->_conn->prepare(substr($query, 0, -2));
+        $stmt = $this->conn->prepare(substr($query, 0, -2));
         if ($stmt->execute($values)) {
             if (!$setId) {
-                $this->id = $this->_conn->lastInsertId();
+                $this->id = $this->conn->lastInsertId();
             }
             return true;
         } else {
@@ -78,16 +78,16 @@ class ObjectMySql implements IConn
     public function read()
     {
         if (isset($this->id)) {
-            $stmt = $this->_conn->prepare("SELECT * from `" . $this->_tableName . "` where `".$this->_table[0]["Field"]."` = ?");
+            $stmt = $this->conn->prepare("SELECT * from `" . $this->tableName . "` where `" . $this->table[0]["Field"] . "` = ?");
             if ($stmt->execute(array($this->id))) {
                 $result = $stmt->fetch(PDO::FETCH_NUM);
                 if (!empty($result)) {
                     foreach ($result as $key => $row) {
-                        if ($this->_table[$key]["Rename"]) {
+                        if ($this->table[$key]["Rename"]) {
                             if (gettype($row) == "string") {
                                 $row = utf8_encode($row);
                             }
-                            $this->__set($this->_table[$key]["Rename"], $row);
+                            $this->__set($this->table[$key]["Rename"], $row);
                         } else {
                             $this->__set($key, $row);
                         }
@@ -113,13 +113,13 @@ class ObjectMySql implements IConn
      */
     public function readAll($orderby = 0, $sync = "asc")
     {
-        $stmt = $this->_conn->prepare("SELECT * from `" . $this->_tableName . "` ORDER BY `". $this->_table[$orderby]["Field"] ."` ".$sync." LIMIT 200");
+        $stmt = $this->conn->prepare("SELECT * from `" . $this->tableName . "` ORDER BY `" . $this->table[$orderby]["Field"] . "` " . $sync . " LIMIT 200");
         if ($stmt->execute()) {
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             if (count($result) > 0) {
                 foreach ($result as $key => $row) {
-                    $object = new $this($this->_conn, $this->_tableName, $this->getFieldsRename());
-                    $object->id = $row[$this->_table[0]["Field"]];
+                    $object = new $this($this->conn, $this->tableName, $this->getFieldsRename());
+                    $object->id = $row[$this->table[0]["Field"]];
                     if ($object->read()) {
                         $result[$key] = $object;
                     }
@@ -152,13 +152,13 @@ class ObjectMySql implements IConn
             case ">=":
             case "<=":
             case "LIKE":
-                $stmt = $this->_conn->prepare("SELECT * FROM `".$this->_tableName."` WHERE `". $this->_table[$index]["Field"]."` ".$condition." ? ORDER BY ".$this->_table[$orderby]["Field"]." ".$sync."  LIMIT 200");
+                $stmt = $this->conn->prepare("SELECT * FROM `" . $this->tableName . "` WHERE `" . $this->table[$index]["Field"] . "` " . $condition . " ? ORDER BY " . $this->table[$orderby]["Field"] . " " . $sync . "  LIMIT 200");
                 if ($stmt->execute(array($value))) {
                     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     if (count($result) > 0) {
                         foreach ($result as $key => $row) {
-                            $object = new $this($this->_conn, $this->_tableName, $this->getFieldsRename());
-                            $object->id = $row[$this->_table[0]["Field"]];
+                            $object = new $this($this->conn, $this->tableName, $this->getFieldsRename());
+                            $object->id = $row[$this->table[0]["Field"]];
                             if ($object->read()) {
                                 $result[$key] = $object;
                             }
@@ -171,19 +171,19 @@ class ObjectMySql implements IConn
                 break;
             case "IN":
                 if (gettype($value) == "array") {
-                    $query = "SELECT * FROM `".$this->_tableName."` WHERE `". $this->_table[$index]["Field"]."` IN (";
+                    $query = "SELECT * FROM `" . $this->tableName . "` WHERE `" . $this->table[$index]["Field"] . "` IN (";
                     $input = "";
                     foreach ($value as $row) {
                         $input .= "?,";
                     }
-                    $query = $query.substr($input, 0, strlen($input) - 1).") ORDER BY ".$this->_table[$orderby]["Field"]." ".$sync."  LIMIT 200";
-                    $stmt = $this->_conn->prepare($query);
+                    $query = $query . substr($input, 0, strlen($input) - 1) . ") ORDER BY " . $this->table[$orderby]["Field"] . " " . $sync . "  LIMIT 200";
+                    $stmt = $this->conn->prepare($query);
                     if ($stmt->execute($value)) {
                         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         if (count($result) > 0) {
                             foreach ($result as $key => $row) {
-                                $object = new $this($this->_conn, $this->_tableName, $this->getFieldsRename());
-                                $object->id = $row[$this->_table[0]["Field"]];
+                                $object = new $this($this->conn, $this->tableName, $this->getFieldsRename());
+                                $object->id = $row[$this->table[0]["Field"]];
                                 if ($object->read()) {
                                     $result[$key] = $object;
                                 }
@@ -199,14 +199,14 @@ class ObjectMySql implements IConn
                 break;
             case "BETWEEN":
                 if ((gettype($value) == "array") && (count($value) == 2)) {
-                    $query = "SELECT * FROM `".$this->_tableName."` WHERE `". $this->_table[$index]["Field"]."` BETWEEN ? AND ? ORDER BY ".$this->_table[$orderby]["Field"]." ".$sync."  LIMIT 200";
-                    $stmt = $this->_conn->prepare($query);
+                    $query = "SELECT * FROM `" . $this->tableName . "` WHERE `" . $this->table[$index]["Field"] . "` BETWEEN ? AND ? ORDER BY " . $this->table[$orderby]["Field"] . " " . $sync . "  LIMIT 200";
+                    $stmt = $this->conn->prepare($query);
                     if ($stmt->execute($value)) {
                         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         if (count($result) > 0) {
                             foreach ($result as $key => $row) {
-                                $object = new $this($this->_conn, $this->_tableName, $this->getFieldsRename());
-                                $object->id = $row[$this->_table[0]["Field"]];
+                                $object = new $this($this->conn, $this->tableName, $this->getFieldsRename());
+                                $object->id = $row[$this->table[0]["Field"]];
                                 if ($object->read()) {
                                     $result[$key] = $object;
                                 }
@@ -220,14 +220,14 @@ class ObjectMySql implements IConn
                 break;
             case "IS NULL":
             case "IS NOT NULL":
-                $query = "SELECT * FROM `".$this->_tableName."` WHERE `". $this->_table[$index]["Field"]."` ".$condition." ORDER BY ".$this->_table[$orderby]["Field"]." ".$sync."  LIMIT 200";
-                $stmt = $this->_conn->prepare($query);
+                $query = "SELECT * FROM `" . $this->tableName . "` WHERE `" . $this->table[$index]["Field"] . "` " . $condition . " ORDER BY " . $this->table[$orderby]["Field"] . " " . $sync . "  LIMIT 200";
+                $stmt = $this->conn->prepare($query);
                 if ($stmt->execute(array($value))) {
                     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     if (count($result) > 0) {
                         foreach ($result as $key => $row) {
-                            $object = new $this($this->_conn, $this->_tableName, $this->getFieldsRename());
-                            $object->id = $row[$this->_table[0]["Field"]];
+                            $object = new $this($this->conn, $this->tableName, $this->getFieldsRename());
+                            $object->id = $row[$this->table[0]["Field"]];
                             if ($object->read()) {
                                 $result[$key] = $object;
                             }
@@ -248,20 +248,20 @@ class ObjectMySql implements IConn
      */
     public function update()
     {
-        $query = "UPDATE `". $this->_tableName."` SET ";
+        $query = "UPDATE `" . $this->tableName . "` SET ";
         $values = [];
-        foreach ($this->_table as $key => $row) {
+        foreach ($this->table as $key => $row) {
             if ($key != 0) {
                 $val = $this->__get($row["Rename"]);
                 if (json_decode($val) == null) {
                     $val = utf8_decode($val);
                 }
-                $query .= "`".$row["Field"]."` = ?, ";
+                $query .= "`" . $row["Field"] . "` = ?, ";
                 $values[] = $val;
             }
         }
-        $query = substr($query, 0, -2)." WHERE `".$this->_table[0]["Field"]."` = ?";
-        $stmt = $this->_conn->prepare($query);
+        $query = substr($query, 0, -2) . " WHERE `" . $this->table[0]["Field"] . "` = ?";
+        $stmt = $this->conn->prepare($query);
         $values[] = $this->id;
         if ($stmt->execute($values)) {
             return true;
@@ -277,7 +277,7 @@ class ObjectMySql implements IConn
      */
     public function delete()
     {
-        $stmt = $this->_conn->prepare("DELETE FROM `". $this->_tableName ."` WHERE `".$this->_table[0]["Field"]."` = ?");
+        $stmt = $this->conn->prepare("DELETE FROM `" . $this->tableName . "` WHERE `" . $this->table[0]["Field"] . "` = ?");
         if ($stmt->execute(array($this->id))) {
             return true;
         } else {
@@ -296,7 +296,7 @@ class ObjectMySql implements IConn
         if (in_array($orderby, $this->getFieldsRename())) {
             return intval(array_search($orderby, $this->getFieldsRename()));
         } else {
-            if (intval($orderby < count($this->_table))) {
+            if (intval($orderby < count($this->table))) {
                 return intval($orderby);
             }
         }
@@ -320,7 +320,7 @@ class ObjectMySql implements IConn
     public function getFieldsRename()
     {
         $ret = [];
-        foreach ($this->_table as $row) {
+        foreach ($this->table as $row) {
             $ret[] = $row["Rename"];
         }
         return $ret;
@@ -334,12 +334,12 @@ class ObjectMySql implements IConn
     {
         $ret = false;
         $values = array();
-        foreach ($this->_table as $row) {
+        foreach ($this->table as $row) {
             if ($row["Rename"] != "id") {
                 switch (explode('(', $row["Type"])[0]) {
                     case "tinyint":
-                        $ret = $ret || (!in_array($this->__get($row["Rename"]), [0,1]));
-                        $values[$row["Rename"]] = (in_array($this->__get($row["Rename"]), [0,1]) ? 'false' : 'true');
+                        $ret = $ret || (!in_array($this->__get($row["Rename"]), [0, 1]));
+                        $values[$row["Rename"]] = (in_array($this->__get($row["Rename"]), [0, 1]) ? 'false' : 'true');
                         break;
                     case "int":
                     case "float":
@@ -371,7 +371,7 @@ class ObjectMySql implements IConn
     {
         // $ret = true;
         // $values = array();
-        // foreach ($this->_table as $key => $row) {
+        // foreach ($this->table as $key => $row) {
         //     if ($row["Rename"] != "id") {
         //         switch (strtolower($row["Rename"])) {
         //             case "ip":
