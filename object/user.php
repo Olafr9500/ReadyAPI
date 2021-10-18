@@ -14,16 +14,16 @@ class User extends ObjectMySql
 
     public function connection()
     {
-        $positionUser = intval(array_search("mail", $this->_fieldsRename));
-        $positionPass = intval(array_search("password", $this->_fieldsRename));
-        $query = "SELECT `" . $this->_fields[0] . "` FROM `" . $this->_tableName . "` WHERE `" . $this->_fields[$positionUser] . "` = ? AND `" . $this->_fields[$positionPass] . "` = ?";
-        $command = $this->_conn->prepare($query);
+        $positionUser = intval(array_search("mail", $this->getFieldsRename()));
+        $positionPass = intval(array_search("password", $this->getFieldsRename()));
+        $query = "SELECT `" . $this->table[0]["Field"] . "` FROM `" . $this->tableName . "` WHERE `" . $this->table[$positionUser]["Field"] . "` = ? AND `" . $this->table[$positionPass]["Field"] . "` = ?";
+        $command = $this->conn->prepare($query);
         if ($command->execute(array($this->mail, $this->password))) {
             if ($result = $command->fetch()) {
                 $this->id = $result[0];
                 return $this->read();
             } else {
-                $this->errorMessage = $this->_fieldsRename[$positionUser] . " or " . $this->_fieldsRename[$positionPass] . " not correct";
+                $this->errorMessage = $this->getFieldsRename()[$positionUser] . " or " . $this->getFieldsRename()[$positionPass] . " not correct : ".$query;
             }
         } else {
             $this->errorMessage = $command->errorInfo();
