@@ -12,7 +12,7 @@ interface IConn
     public function create();
     public function read();
     public function readAll();
-    public function readBy($value, $index, $condition);
+    public function readBy($value, $index, $condition, $separator);
     public function update();
     public function delete();
     public function isEmpty();

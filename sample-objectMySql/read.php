@@ -52,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             }
         }
         if ($checkSecure) {
-            $sample = new SampleObject($database->conn);
+            $sample = new User($database->conn);
             $lazy = true;
             if (isset($_GET["lazy"])) {
                 $lazy = ($lazy == "false") ? false : true;
@@ -65,52 +65,99 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                     displayError("No element with this id", array("messageError" => $sample->errorMessage));
                 }
             } elseif ((isset($_GET["index"])) && (isset($_GET["value"])) && (isset($_GET["condition"]))) {
-                if (array_search($_GET["index"], $sample->getFieldsRename())) {
-                    $index = array_search($_GET["index"], $sample->getFieldsRename());
-                    if (in_array($_GET["condition"], ["=", "!=", "<>", "<", ">", "<=", ">=","LIKE", "IN", "BETWEEN", "IS NULL", "IS NOT NULL"])) {
-                        $condition = strval($_GET["condition"]);
-                        $value = $_GET["value"];
-                        $orderby = 0;
-                        $sync = "asc";
-                        if (isset($_GET["orderby"])) {
-                            if ($result = $sample->isOrderByCorrect($_GET["orderby"])) {
-                                $orderby = $result;
-                            }
-                        }
-                        if ((isset($_GET["sync"])) && ($sample->isSyncCorrect($_GET["sync"]))) {
-                            $sync = $_GET["sync"];
-                        }
-                        $samples = $sample->readBy($index, $value, $condition, $orderby, $sync, $lazy);
-                        if (count($samples) > 0) {
-                            if (count($samples) == 200) {
-                                $response = array( "warning" => "200 or more query found", "response" => $samples);
-                            } else {
-                                $response = array("response" => $samples);
-                            }
-                            displayError("no", $response);
-                        } else {
-                            displayError("Empty", array("errorMessage" => $sample->errorMessage));
-                        }
+                $index = [];
+                $listIndex = explode(",", $_GET["index"]);
+                $listCondition = explode(",", $_GET["condition"]);
+                $listAuthCondition = ["=", "!=", "<>", "<", ">", "<=", ">=","LIKE", "IN", "BETWEEN", "IS"];
+                foreach ($listIndex as $key => $row) {
+                    if (array_search($row, $sample->getFieldsRename())) {
+                        $index[$key] = array_search($row, $sample->getFieldsRename());
                     } else {
-                        displayError("Condition inexistante", array("expected" => ["=", "!=", "<>", "<", ">", "<=", ">=","LIKE", "IN", "BETWEEN", "IS NULL", "IS NOT NULL"], "have" => $_GET["condition"]));
+                        displayError("index ".$row." absent de la bdd", array("GET" => $_GET));
+                        exit;
                     }
+                }
+                foreach ($listCondition as $key => $row) {
+                    if (in_array($row, $listAuthCondition)) {
+                        $condition[$key] = strval($row);
+                    } else {
+                        displayError("Condition inexistante", array("expected" => $listAuthCondition, "have" => $row));
+                        exit;
+                    }
+                }
+                $value = explode(",", $_GET["value"]);
+                $separator = isset($_GET["separator"]) ? explode(",", $_GET["separator"]) : ["AND"];
+                $orderby = [0];
+                $sync = ["asc"];
+                $listOrder = [];
+                $listSync = [];
+                if (isset($_GET["orderby"])) {
+                    if (gettype($_GET["orderby"]) == "array") {
+                        $listOrder = $_GET["orderby"];
+                    } elseif (gettype($_GET["orderby"]) == "string") {
+                        $listOrder = explode(",", $_GET["orderby"]);
+                    }
+                    foreach ($listOrder as $key => $order) {
+                        if ($result = $sample->isOrderByCorrect($order)) {
+                            $orderby[$key] = $result;
+                        }
+                    }
+                }
+                if (isset($_GET["sync"])) {
+                    if (gettype($_GET["sync"]) == "array") {
+                        $listSync = $_GET["sync"];
+                    } elseif (gettype($_GET["sync"]) == "string") {
+                        $listSync = explode(",", $_GET["sync"]);
+                    }
+                    foreach ($listSync as $key => $order) {
+                        if ($sample->isSyncCorrect($order)) {
+                            $sync[$key] = $order;
+                        }
+                    }
+                }
+                $samples = $sample->readBy($index, $value, $condition, $separator, $orderby, $sync, $lazy);
+                if (count($samples) > 0) {
+                    if (count($samples) == 200) {
+                        $response = array( "warning" => "200 or more query found", "response" => $samples);
+                    } else {
+                        $response = array("response" => $samples);
+                    }
+                    displayError("no", $response);
                 } else {
-                    displayError("index ".$_GET["index"]." absent de la bdd", array("GET" => $_GET));
+                    displayError("Empty", array("errorMessage" => $sample->errorMessage));
                 }
             } else {
-                $orderby = 0;
-                $sync = "asc";
+                $orderby = [0];
+                $sync = ["asc"];
+                $listOrder = [];
+                $listSync = [];
                 if (isset($_GET["orderby"])) {
-                    if ($result = $sample->isOrderByCorrect($_GET["orderby"])) {
-                        $orderby = $result;
+                    if (gettype($_GET["orderby"]) == "array") {
+                        $listOrder = $_GET["orderby"];
+                    } elseif (gettype($_GET["orderby"]) == "string") {
+                        $listOrder = explode(",", $_GET["orderby"]);
+                    }
+                    foreach ($listOrder as $key => $order) {
+                        if ($result = $sample->isOrderByCorrect($order)) {
+                            $orderby[$key] = $result;
+                        }
                     }
                 }
-                if ((isset($_GET["sync"])) && ($sample->isSyncCorrect($_GET["sync"]))) {
-                    $sync = $_GET["sync"];
+                if (isset($_GET["sync"])) {
+                    if (gettype($_GET["sync"]) == "array") {
+                        $listSync = $_GET["sync"];
+                    } elseif (gettype($_GET["sync"]) == "string") {
+                        $listSync = explode(",", $_GET["sync"]);
+                    }
+                    foreach ($listSync as $key => $order) {
+                        if ($sample->isSyncCorrect($order)) {
+                            $sync[$key] = $order;
+                        }
+                    }
                 }
                 $samples = $sample->readAll($orderby, $sync, $lazy);
                 if (count($samples) > 0) {
-                    displayError("no", array("response" => $samples));
+                    displayError("no", array("response" => $samples, "orderby" => $orderby, "sync" => $sync));
                 } else {
                     displayError("no", array("errorMessage" => $sample->errorMessage));
                 }

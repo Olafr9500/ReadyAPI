@@ -111,133 +111,115 @@ class ObjectMySql implements IConn
      * @param string $sync
      * @return array|false List of database entries or false
      */
-    public function readAll($orderby = 0, $sync = "asc")
+    public function readAll($orderby = [0], $sync = ["asc"])
     {
-        $stmt = $this->conn->prepare("SELECT * from `" . $this->tableName . "` ORDER BY `" . $this->table[$orderby]["Field"] . "` " . $sync . " LIMIT 200");
-        if ($stmt->execute()) {
-            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            if (count($result) > 0) {
-                foreach ($result as $key => $row) {
-                    $object = new $this($this->conn, $this->tableName, $this->getFieldsRename());
-                    $object->id = $row[$this->table[0]["Field"]];
-                    if ($object->read()) {
-                        $result[$key] = $object;
-                    }
+        if (count($orderby) == count($sync)) {
+            $query = "SELECT * from `" . $this->tableName . "` ORDER BY";
+            foreach ($orderby as $key => $order) {
+                $query .= " `" . $this->table[$order]["Field"] . "` " . $sync[$key];
+                if ($key != (count($orderby)-1)) {
+                    $query .= ",";
                 }
-                return $result;
+            }
+            $stmt = $this->conn->prepare($query." LIMIT 200");
+            if ($stmt->execute()) {
+                $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                if (count($result) > 0) {
+                    foreach ($result as $key => $row) {
+                        $object = new $this($this->conn, $this->tableName, $this->getFieldsRename());
+                        $object->id = $row[$this->table[0]["Field"]];
+                        if ($object->read()) {
+                            $result[$key] = $object;
+                        }
+                    }
+                    $this->errorMessage = $query;
+                    return $result;
+                }
+            } else {
+                $this->errorMessage = $stmt->errorInfo();
             }
         } else {
-            $this->errorMessage = $stmt->errorInfo();
+            $this->errorMessage = "Nombre de 'orderby' différent de celui des 'sync'";
         }
         return false;
     }
     /**
      * Retrieves object's entries in the database with a condition
      *
-     * @param string|integer $index
-     * @param intege|array $value
-     * @param string $condition
-     * @param integer $orderby
-     * @param string $sync
+     * @param array $index
+     * @param array $value
+     * @param array $condition
+     * @param array $separator
+     * @param array $orderby
+     * @param array $sync
      * @return array|false List of database entries or false
      */
-    public function readBy($index, $value, $condition, $orderby = 0, $sync = "asc")
+    public function readBy($index, $value, $condition, $separator, $orderby = [0], $sync = ["asc"])
     {
-        switch ($condition) {
-            case "=":
-            case "!=":
-            case "<>":
-            case ">":
-            case "<":
-            case ">=":
-            case "<=":
-            case "LIKE":
-                $stmt = $this->conn->prepare("SELECT * FROM `" . $this->tableName . "` WHERE `" . $this->table[$index]["Field"] . "` " . $condition . " ? ORDER BY " . $this->table[$orderby]["Field"] . " " . $sync . "  LIMIT 200");
-                if ($stmt->execute(array($value))) {
-                    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    if (count($result) > 0) {
-                        foreach ($result as $key => $row) {
-                            $object = new $this($this->conn, $this->tableName, $this->getFieldsRename());
-                            $object->id = $row[$this->table[0]["Field"]];
-                            if ($object->read()) {
-                                $result[$key] = $object;
+        if ((count($orderby) == count($sync)) && (count($index) == count($condition))) {
+            $query = "SELECT * FROM `" . $this->tableName . "` WHERE ";
+            $queryOrder = "";
+            foreach ($orderby as $key => $order) {
+                $queryOrder .= " `" . $this->table[$order]["Field"] . "` " . $sync[$key];
+                if ($key != (count($orderby)-1)) {
+                    $queryOrder .= ",";
+                }
+            }
+            foreach ($condition as $key => $row) {
+                switch ($row) {
+                    case "=":
+                    case "!=":
+                    case "<>":
+                    case ">":
+                    case "<":
+                    case ">=":
+                    case "<=":
+                    case "LIKE":
+                        $query .= "`" . $this->table[$index[$key]]["Field"] . "` " . $row . " ?";
+                        break;
+                    case "IN":
+                        if (gettype($value[$key]) == "array") {
+                            $query .= "`" . $this->table[$index]["Field"] . "` IN (";
+                            $input = "";
+                            foreach ($value[$key] as $row) {
+                                $input .= "?,";
                             }
+                            $query = $query . substr($input, 0, strlen($input) - 1) . ")";
+                        } else {
+                            $this->errorMessage = "Mauvais type de données entrée";
+                        }
+                        break;
+                    case "BETWEEN":
+                        if ((gettype($value[$key]) == "array") && (count($value[$key]) == 2)) {
+                            $query = "`" . $this->table[$index]["Field"] . "` BETWEEN ? AND ?";
+                        }
+                        break;
+                    case "IS":
+                        $query = "`" . $this->table[$index]["Field"] . "` IS ".$value[$key];
+                        break;
+                }
+                if ($key != (count($index)-1)) {
+                    $query .= " ".($separator[$key] ? $separator[$key] : "AND")." ";
+                }
+            }
+            $stmt = $this->conn->prepare($query. "  LIMIT 200");
+            if ($stmt->execute($value)) {
+                $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                if (count($result) > 0) {
+                    foreach ($result as $key => $row) {
+                        $object = new $this($this->conn, $this->tableName, $this->getFieldsRename());
+                        $object->id = $row[$this->table[0]["Field"]];
+                        if ($object->read()) {
+                            $result[$key] = $object;
                         }
                     }
-                    return $result;
-                } else {
-                    $this->errorMessage = $stmt->errorInfo();
                 }
-                break;
-            case "IN":
-                if (gettype($value) == "array") {
-                    $query = "SELECT * FROM `" . $this->tableName . "` WHERE `" . $this->table[$index]["Field"] . "` IN (";
-                    $input = "";
-                    foreach ($value as $row) {
-                        $input .= "?,";
-                    }
-                    $query = $query . substr($input, 0, strlen($input) - 1) . ") ORDER BY " . $this->table[$orderby]["Field"] . " " . $sync . "  LIMIT 200";
-                    $stmt = $this->conn->prepare($query);
-                    if ($stmt->execute($value)) {
-                        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                        if (count($result) > 0) {
-                            foreach ($result as $key => $row) {
-                                $object = new $this($this->conn, $this->tableName, $this->getFieldsRename());
-                                $object->id = $row[$this->table[0]["Field"]];
-                                if ($object->read()) {
-                                    $result[$key] = $object;
-                                }
-                            }
-                        }
-                        return $result;
-                    } else {
-                        $this->errorMessage = $stmt->errorInfo();
-                    }
-                } else {
-                    $this->errorMessage = "Mauvais type de données entrée";
-                }
-                break;
-            case "BETWEEN":
-                if ((gettype($value) == "array") && (count($value) == 2)) {
-                    $query = "SELECT * FROM `" . $this->tableName . "` WHERE `" . $this->table[$index]["Field"] . "` BETWEEN ? AND ? ORDER BY " . $this->table[$orderby]["Field"] . " " . $sync . "  LIMIT 200";
-                    $stmt = $this->conn->prepare($query);
-                    if ($stmt->execute($value)) {
-                        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                        if (count($result) > 0) {
-                            foreach ($result as $key => $row) {
-                                $object = new $this($this->conn, $this->tableName, $this->getFieldsRename());
-                                $object->id = $row[$this->table[0]["Field"]];
-                                if ($object->read()) {
-                                    $result[$key] = $object;
-                                }
-                            }
-                        }
-                        return $result;
-                    } else {
-                        $this->errorMessage = $stmt->errorInfo();
-                    }
-                }
-                break;
-            case "IS NULL":
-            case "IS NOT NULL":
-                $query = "SELECT * FROM `" . $this->tableName . "` WHERE `" . $this->table[$index]["Field"] . "` " . $condition . " ORDER BY " . $this->table[$orderby]["Field"] . " " . $sync . "  LIMIT 200";
-                $stmt = $this->conn->prepare($query);
-                if ($stmt->execute(array($value))) {
-                    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    if (count($result) > 0) {
-                        foreach ($result as $key => $row) {
-                            $object = new $this($this->conn, $this->tableName, $this->getFieldsRename());
-                            $object->id = $row[$this->table[0]["Field"]];
-                            if ($object->read()) {
-                                $result[$key] = $object;
-                            }
-                        }
-                    }
-                    return $result;
-                } else {
-                    $this->errorMessage = $stmt->errorInfo();
-                }
-                break;
+                return $result;
+            } else {
+                $this->errorMessage = $stmt->errorInfo();
+            }
+        } else {
+            $this->errorMessage = "Nombre de 'orderby' différent de celui des 'sync'";
         }
         return [];
     }
