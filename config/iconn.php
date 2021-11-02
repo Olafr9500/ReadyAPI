@@ -17,4 +17,5 @@ interface IConn
     public function delete();
     public function isEmpty();
     public function isDataCorrect();
+    public function logInfo($action, $user);
 }
