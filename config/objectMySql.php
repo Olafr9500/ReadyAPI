@@ -9,10 +9,35 @@ use PDO;
  */
 class ObjectMySql implements IConn
 {
+    /**
+     * Connector PDO MySQL
+     *
+     * @var PDO
+     */
     private $conn;
+    /**
+     * Name table SQL
+     *
+     * @var string
+     */
     private $tableName;
+    /**
+     * List column table SQL with metadata
+     *
+     * @var array
+     */
     private $table = [];
+    /**
+     * Primary Key in table
+     *
+     * @var int
+     */
     public $id;
+    /**
+     * Error Message
+     *
+     * @var string
+     */
     public $errorMessage;
     /**
      * Constructor of the MySql object
@@ -117,11 +142,11 @@ class ObjectMySql implements IConn
             $query = "SELECT * from `" . $this->tableName . "` ORDER BY";
             foreach ($orderby as $key => $order) {
                 $query .= " `" . $this->table[$order]["Field"] . "` " . $sync[$key];
-                if ($key != (count($orderby)-1)) {
+                if ($key != (count($orderby) - 1)) {
                     $query .= ",";
                 }
             }
-            $stmt = $this->conn->prepare($query." LIMIT 200");
+            $stmt = $this->conn->prepare($query . " LIMIT 200");
             if ($stmt->execute()) {
                 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 if (count($result) > 0) {
@@ -161,7 +186,7 @@ class ObjectMySql implements IConn
             $queryOrder = "";
             foreach ($orderby as $key => $order) {
                 $queryOrder .= " `" . $this->table[$order]["Field"] . "` " . $sync[$key];
-                if ($key != (count($orderby)-1)) {
+                if ($key != (count($orderby) - 1)) {
                     $queryOrder .= ",";
                 }
             }
@@ -179,10 +204,14 @@ class ObjectMySql implements IConn
                         break;
                     case "IN":
                         if (gettype($value[$key]) == "array") {
-                            $query .= "`" . $this->table[$index]["Field"] . "` IN (";
+                            $trueValue = $value[$key];
+                            $query .= "`" . $this->table[$index[$key]]["Field"] . "` IN (";
                             $input = "";
-                            foreach ($value[$key] as $row) {
+                            $i = 0;
+                            foreach ($trueValue as $row) {
                                 $input .= "?,";
+                                $value[$key + $i] = $row;
+                                $i++;
                             }
                             $query = $query . substr($input, 0, strlen($input) - 1) . ")";
                         } else {
@@ -195,14 +224,14 @@ class ObjectMySql implements IConn
                         }
                         break;
                     case "IS":
-                        $query = "`" . $this->table[$index]["Field"] . "` IS ".$value[$key];
+                        $query = "`" . $this->table[$index]["Field"] . "` IS " . $value[$key];
                         break;
                 }
-                if ($key != (count($index)-1)) {
-                    $query .= " ".($separator[$key] ? $separator[$key] : "AND")." ";
+                if ($key != (count($index) - 1)) {
+                    $query .= " " . ($separator[$key] ? $separator[$key] : "AND") . " ";
                 }
             }
-            $stmt = $this->conn->prepare($query. "  LIMIT 200");
+            $stmt = $this->conn->prepare($query . "  LIMIT 200");
             if ($stmt->execute($value)) {
                 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 if (count($result) > 0) {
@@ -295,7 +324,7 @@ class ObjectMySql implements IConn
         return in_array(strtolower($sync), ["asc", "desc"]);
     }
     /**
-     * Undocumented function
+     * Get only the names of columns
      *
      * @return array
      */
@@ -379,5 +408,24 @@ class ObjectMySql implements IConn
         // }
         // return $ret ? true : $values;
         return true;
+    }
+    /**
+     * Make log
+     *
+     * @param string $action
+     * @param int $user
+     * @return boolean
+     */
+    public function logInfo($action, $user)
+    {
+        if ($user instanceof User) {
+            if (gettype($action) == "string") {
+                if (!is_dir("../log")) {
+                    mkdir('../log');
+                }
+                error_log(date("H:i:s") . " (" . $user->id . ") - " . $action . "\n", 3, "../log/" . date("Y-m-d") . ".log");
+            }
+        }
+        return false;
     }
 }
