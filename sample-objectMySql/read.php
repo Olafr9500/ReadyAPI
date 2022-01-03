@@ -7,9 +7,11 @@ header("Access-Control-Allow-Methods: GET");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-include_once '../config/core.php';
+include_once './config/init.php';
+include_once './config/function.php';
 include_once '../config/iconn.php';
 include_once '../config/database.php';
+include_once '../config/databaseMySQL.php';
 include_once '../config/objectMySql.php';
 include_once '../object/user.php';
 include_once '../object/sample-objectMySql.php';
@@ -17,11 +19,9 @@ include_once '../object/sample-objectMySql.php';
 require '../vendor/autoload.php';
 
 use \Firebase\JWT\JWT;
-use ReadyAPI\Database;
-use ReadyAPI\User;
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
-    $database = new Database();
+    $database = new DatabaseMySQL();
     if (!is_null($database->conn)) {
         $checkSecure = true;
         if (SECURE_API) {
@@ -60,6 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             if (isset($_GET["id"])) {
                 $sample->id = $_GET["id"];
                 if ($sample->read($lazy)) {
+                    $user->logInfo("READ BY ID - ".$sample->tableName, $user);
                     displayError("no", array("response" => $sample));
                 } else {
                     displayError("No element with this id", array("messageError" => $sample->errorMessage));
@@ -86,6 +87,21 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                     }
                 }
                 $value = explode(",", $_GET["value"]);
+                foreach ($value as $key => $row) {
+                    if (preg_match("/(\[)/m", $row)) {
+                        $i = 0;
+                        $value[$key+$i]= str_replace("[", "", $row);
+                        $arrayRet = [];
+                        do {
+                            $arrayRet[] = $value[$key+$i];
+                            unset($value[$key+$i]);
+                            array_values($value);
+                            $i++;
+                        } while (!preg_match("/(\])/m", $arrayRet[$i-1]));
+                        $arrayRet[$i-1] = str_replace("]", "", $arrayRet[$i-1]);
+                        $value[$key] = $arrayRet;
+                    }
+                }
                 $separator = isset($_GET["separator"]) ? explode(",", $_GET["separator"]) : ["AND"];
                 $orderby = [0];
                 $sync = ["asc"];
@@ -122,6 +138,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                     } else {
                         $response = array("response" => $samples);
                     }
+                    $user->logInfo("READ BY INDEX - ".$sample->tableName, $user);
                     displayError("no", $response);
                 } else {
                     displayError("Empty", array("errorMessage" => $sample->errorMessage));
@@ -157,6 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 }
                 $samples = $sample->readAll($orderby, $sync, $lazy);
                 if (count($samples) > 0) {
+                    $user->logInfo("READ ALL - ".$sample->tableName, $user);
                     displayError("no", array("response" => $samples, "orderby" => $orderby, "sync" => $sync));
                 } else {
                     displayError("no", array("errorMessage" => $sample->errorMessage));

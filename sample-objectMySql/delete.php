@@ -7,9 +7,11 @@ header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-include_once '../config/core.php';
+include_once './config/init.php';
+include_once './config/function.php';
 include_once '../config/iconn.php';
 include_once '../config/database.php';
+include_once '../config/databaseMySQL.php';
 include_once '../config/objectMySql.php';
 include_once '../object/user.php';
 include_once '../object/sample-objectMySql.php';
@@ -17,11 +19,9 @@ include_once '../object/sample-objectMySql.php';
 require '../vendor/autoload.php';
 
 use \Firebase\JWT\JWT;
-use ReadyAPI\Database;
-use ReadyAPI\User;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $database = new Database();
+    $database = new DatabaseMySQL();
     if (!is_null($database->conn)) {
         $checkSecure = true;
         if (SECURE_API) {
@@ -57,6 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $sample->id = $_POST["id"];
                 if ($sample->read()) {
                     if ($sample->delete()) {
+                        $user->logInfo("DELETE - ".$sample->tableName, $user);
                         displayError("no", array("response" => $sample));
                     } else {
                         displayError("Cannot delete item", array("message" => $sample->errorMessage));
