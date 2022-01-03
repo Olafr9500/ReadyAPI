@@ -420,10 +420,10 @@ class ObjectMySql implements IConn
     {
         if ($user instanceof User) {
             if (gettype($action) == "string") {
-                if (!is_dir("../log")) {
-                    mkdir('../log');
+                if (!is_dir("log")) {
+                    mkdir('log');
                 }
-                error_log(date("H:i:s") . " (" . $user->id . ") - " . $action . "\n", 3, "../log/" . date("Y-m-d") . ".log");
+                error_log(date("H:i:s") . " (" . $user->id . ") - " . $action . "\n", 3, "log/" . date("Y-m-d") . ".log");
             }
         }
         return false;
