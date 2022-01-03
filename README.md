@@ -40,7 +40,7 @@ $ composer update
     $sample = new SampleObject($database->conn);
     ```
 #### Make API secure less
-- In the file **`config/core.php`**, change the "SECURE_API" constant from true to false.
+- In the file **`config/function.php`**, change the "SECURE_API" constant from true to false.
     ```php
     define("SECURE_API", (true|false), true);
     ```
