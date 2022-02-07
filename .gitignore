@@ -1,6 +1,6 @@
 test.php
 
-vendor/*
+vendor
 composer.lock
 .vscode/settings.json
 
