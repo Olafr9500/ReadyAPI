@@ -44,9 +44,9 @@ class ObjectMySql implements IConn
      *
      * @param PDO $db Database connector
      * @param string $nameBase Database Name
-     * @param array $filedsRename List of object variables in the same order as the database columns
+     * @param array $fieldsRename List of object variables in the same order as the database columns
      */
-    public function __construct($db, $nameBase, $filedsRename = ["id"])
+    public function __construct($db, $nameBase, $fieldsRename = ["id"])
     {
         $this->conn = $db;
         $this->tableName = $nameBase;
@@ -54,7 +54,7 @@ class ObjectMySql implements IConn
         $stmt->execute();
         $this->table = $stmt->fetchAll();
         foreach ($this->table as $key => $row) {
-            $row["Rename"] = array_shift($filedsRename);
+            $row["Rename"] = array_shift($fieldsRename);
             $this->table[$key] = $row;
         }
     }
@@ -301,7 +301,7 @@ class ObjectMySql implements IConn
      * Check if the ordering index is indeed contained in the database table
      *
      * @param string|boolean $orderby
-     * @return boolean|interger Return false if absent from the table
+     * @return boolean|integer Return false if absent from the table
      */
     public function isOrderByCorrect($orderby)
     {
