@@ -150,7 +150,7 @@ class ObjectMsSql implements IConn
         if ((count($orderby) == count($sync)) && (count($index) == count($condition))) {
             $head = $this->constructHead();
             $query = "SELECT TOP 200 " . ($head == "" ? "*" : $head) . " FROM " . $this->tableName . " WHERE ";
-            $queryOrder = "";
+            $queryOrder = " ORDER BY";
             foreach ($orderby as $key => $order) {
                 $queryOrder .= " " . $this->table[$order]["COLUMN_NAME"] . " " . $sync[$key];
                 if ($key != (count($orderby) - 1)) {
@@ -167,6 +167,7 @@ class ObjectMsSql implements IConn
                     case ">=":
                     case "<=":
                     case "LIKE":
+                    case "NOT LIKE":
                         $query .= "" . $this->table[$index[$key]]["COLUMN_NAME"] . " " . $row . " ?";
                         break;
                     case "IN":
@@ -194,7 +195,7 @@ class ObjectMsSql implements IConn
                     $query .= " " . ($separator[$key] ? $separator[$key] : "AND") . " ";
                 }
             }
-            $stmt = sqlsrv_query($this->conn, $query, $value);
+            $stmt = sqlsrv_query($this->conn, $query . $queryOrder, $value);
             if ($stmt) {
                 $result = [];
                 $key = 0;

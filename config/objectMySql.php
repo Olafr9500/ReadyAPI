@@ -183,7 +183,7 @@ class ObjectMySql implements IConn
     {
         if ((count($orderby) == count($sync)) && (count($index) == count($condition))) {
             $query = "SELECT * FROM `" . $this->tableName . "` WHERE ";
-            $queryOrder = "";
+            $queryOrder = " ORDER BY";
             foreach ($orderby as $key => $order) {
                 $queryOrder .= " `" . $this->table[$order]["Field"] . "` " . $sync[$key];
                 if ($key != (count($orderby) - 1)) {
@@ -200,6 +200,7 @@ class ObjectMySql implements IConn
                     case ">=":
                     case "<=":
                     case "LIKE":
+                    case "NOT LIKE":
                         $query .= "`" . $this->table[$index[$key]]["Field"] . "` " . $row . " ?";
                         break;
                     case "IN":
@@ -231,7 +232,7 @@ class ObjectMySql implements IConn
                     $query .= " " . ($separator[$key] ? $separator[$key] : "AND") . " ";
                 }
             }
-            $stmt = $this->conn->prepare($query . "  LIMIT 200");
+            $stmt = $this->conn->prepare($query . $queryOrder . "  LIMIT 200");
             if ($stmt->execute($value)) {
                 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 if (count($result) > 0) {
