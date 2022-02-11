@@ -64,7 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             if (isset($_GET["id"])) {
                 $sample->id = $_GET["id"];
                 if ($sample->read($lazy)) {
-                    $user->logInfo("READ BY ID - ".$sample->tableName, $user);
+                    $sample->logInfo("READ BY ID - ".$sample->tableName, $user);
                     displayError("no", array("response" => $sample));
                 } else {
                     displayError("No element with this id", array("messageError" => $sample->errorMessage));
@@ -142,7 +142,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                     } else {
                         $response = array("response" => $samples);
                     }
-                    $user->logInfo("READ BY INDEX - ".$sample->tableName, $user);
+                    $sample->logInfo("READ BY INDEX - ".$sample->tableName, $user);
                     displayError("no", $response);
                 } else {
                     displayError("Empty", array("errorMessage" => $sample->errorMessage));
@@ -178,7 +178,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 }
                 $samples = $sample->readAll($orderby, $sync, $lazy);
                 if (count($samples) > 0) {
-                    $user->logInfo("READ ALL - ".$sample->tableName, $user);
+                    $sample->logInfo("READ ALL - ".$sample->tableName, $user);
                     displayError("no", array("response" => $samples, "orderby" => $orderby, "sync" => $sync));
                 } else {
                     displayError("no", array("errorMessage" => $sample->errorMessage));

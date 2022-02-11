@@ -68,7 +68,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     if ($sample->isEmpty() === false) {
                         if ($sample->isDataCorrect() === true) {
                             if ($sample->update()) {
-                                $user->logInfo("UPDATE - ".$sample->tableName, $user);
+                                $sample->logInfo("UPDATE - ".$sample->tableName, $user);
                                 displayError("no", array("response" => $sample));
                             } else {
                                 displayError("Cannot update item", array("message" => $sample->errorMessage));

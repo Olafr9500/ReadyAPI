@@ -61,7 +61,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $sample->id = $_POST["id"];
                 if ($sample->read()) {
                     if ($sample->delete()) {
-                        $user->logInfo("DELETE - ".$sample->tableName, $user);
+                        $sample->logInfo("DELETE - ".$sample->tableName, $user);
                         displayError("no", array("response" => $sample));
                     } else {
                         displayError("Cannot delete item", array("message" => $sample->errorMessage));

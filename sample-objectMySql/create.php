@@ -84,7 +84,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     if ($sample->isDataCorrect() === true) {
                         if ($sample->create($setId)) {
                             displayError("no", array("response" => $sample));
-                            $user->logInfo("CREATE - ".$sample->tableName, $user);
+                            $sample->logInfo("CREATE - ".$sample->tableName, $user);
                         } else {
                             displayError("Cannot add item", array("message" => $sample->errorMessage));
                         }
