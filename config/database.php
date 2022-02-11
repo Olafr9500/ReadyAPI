@@ -24,6 +24,6 @@ class Database
 
     public static function encodePassword($password)
     {
-        return "47".hash("sha256", $password);
+        return hash("sha256", $password);
     }
 }

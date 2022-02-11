@@ -9,7 +9,8 @@ class DatabaseMySQL extends Database
 {
     public function __construct()
     {
-        parent::__construct("tumbler", "recup_stuart", "plv", "plv");
+        // TODO Update Database informations
+        parent::__construct("<Name_Server>", "<Name_DataBase>", "<Username>", "<Password>");
         try {
             $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->dbName, $this->userName, $this->password);
         } catch (PDOException $exception) {
