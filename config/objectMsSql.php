@@ -345,15 +345,13 @@ class ObjectMsSql implements IConnection
      * @param int $user
      * @return boolean
      */
-    public function logInfo($action, $user)
+    public function logInfo($action, $user = null)
     {
-        if ($user instanceof User) {
-            if (gettype($action) == "string") {
-                if (!is_dir("../log")) {
-                    mkdir('../log');
-                }
-                error_log(date("H:i:s") . " (" . $user->id . ") - " . $action . "\n", 3, "../log/" . date("Y-m-d") . ".log");
+        if (gettype($action) == "string") {
+            if (!is_dir("log")) {
+                mkdir('log');
             }
+            error_log(date("H:i:s") . " (" . ($user instanceof User ? $user->id : "Not Connected") . ") - " . $action . "\n", 3, "log/" . date("Y-m-d") . ".log");
         }
         return false;
     }
