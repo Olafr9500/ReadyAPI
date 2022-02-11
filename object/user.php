@@ -23,7 +23,7 @@ class User extends ObjectMySql
                 $this->id = $result[0];
                 return $this->read();
             } else {
-                $this->errorMessage = $this->getFieldsRename()[$positionUser] . " or " . $this->getFieldsRename()[$positionPass] . " not correct : ".$query;
+                $this->errorMessage = $this->getFieldsRename()[$positionUser] . " or " . $this->getFieldsRename()[$positionPass] . " not correct : " . $query;
             }
         } else {
             $this->errorMessage = $command->errorInfo();
