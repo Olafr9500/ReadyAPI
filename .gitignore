@@ -4,5 +4,5 @@ vendor
 composer.lock
 .vscode/settings.json
 
-user/*
-log/*
+user
+log
