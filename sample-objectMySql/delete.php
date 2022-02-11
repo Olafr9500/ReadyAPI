@@ -9,12 +9,15 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 
 include_once '../config/init.php';
 include_once '../config/function.php';
-include_once '../config/iconn.php';
+include_once '../config/iconnection.php';
 include_once '../config/database.php';
 include_once '../config/databaseMySQL.php';
+include_once '../config/databaseMsSQL.php';
 include_once '../config/objectMySql.php';
+include_once '../config/objectMsSql.php';
 include_once '../object/user.php';
 include_once '../object/sample-objectMySql.php';
+include_once '../object/sample-objectMsSql.php';
 
 require '../vendor/autoload.php';
 
@@ -22,6 +25,7 @@ use \Firebase\JWT\JWT;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $database = new DatabaseMySQL();
+    $database = new DatabaseMsSQL();
     if (!is_null($database->conn)) {
         $checkSecure = true;
         if (SECURE_API) {

@@ -9,12 +9,15 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 
 include_once '../config/init.php';
 include_once '../config/function.php';
-include_once '../config/iconn.php';
+include_once '../config/iconnection.php';
 include_once '../config/database.php';
 include_once '../config/databaseMySQL.php';
+include_once '../config/databaseMsSQL.php';
 include_once '../config/objectMySql.php';
+include_once '../config/objectMsSql.php';
 include_once '../object/user.php';
 include_once '../object/sample-objectMySql.php';
+include_once '../object/sample-objectMsSql.php';
 
 require '../vendor/autoload.php';
 
@@ -22,6 +25,7 @@ use \Firebase\JWT\JWT;
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $database = new DatabaseMySQL();
+    $database = new DatabaseMsSQL();
     if (!is_null($database->conn)) {
         $checkSecure = true;
         if (SECURE_API) {
@@ -52,7 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             }
         }
         if ($checkSecure) {
-            $sample = new User($database->conn);
+            $sample = new SampleObject($database->conn);
             $lazy = true;
             if (isset($_GET["lazy"])) {
                 $lazy = ($lazy == "false") ? false : true;
@@ -69,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 $index = [];
                 $listIndex = explode(",", $_GET["index"]);
                 $listCondition = explode(",", $_GET["condition"]);
-                $listAuthCondition = ["=", "!=", "<>", "<", ">", "<=", ">=","LIKE", "IN", "BETWEEN", "IS"];
+                $listAuthCondition = ["=", "!=", "<>", "<", ">", "<=", ">=","LIKE","NOT LIKE", "IN", "BETWEEN", "IS"];
                 foreach ($listIndex as $key => $row) {
                     if (array_search($row, $sample->getFieldsRename())) {
                         $index[$key] = array_search($row, $sample->getFieldsRename());
