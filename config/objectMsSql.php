@@ -7,7 +7,7 @@ use PDO;
 /**
  * Class MsSql object
  */
-class ObjectMsSql implements IConn
+class ObjectMsSql implements IConnection
 {
     private $conn;
     private $tableName;

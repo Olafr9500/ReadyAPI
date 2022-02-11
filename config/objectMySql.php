@@ -7,7 +7,7 @@ use PDO;
 /**
  * Class MySql object
  */
-class ObjectMySql implements IConn
+class ObjectMySql implements IConnection
 {
     /**
      * Connector PDO MySQL
