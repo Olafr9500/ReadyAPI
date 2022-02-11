@@ -5,7 +5,7 @@ namespace ReadyAPI;
 /**
  * Interface to link the data system with the objects
  */
-interface IConn
+interface IConnection
 {
     public function __get($property);
     public function __set($property, $value);
