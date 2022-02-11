@@ -9,7 +9,7 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 
 include_once './config/init.php';
 include_once './config/function.php';
-include_once './config/iconn.php';
+include_once './config/iconnection.php';
 include_once './config/database.php';
 include_once './config/databaseMySQL.php';
 include_once './config/objectMySql.php';
@@ -21,6 +21,7 @@ use \Firebase\JWT\JWT;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $database = new DatabaseMySQL();
+    $database = new DatabaseMsSQL();
     if (!is_null($database->conn)) {
         if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
             $jwt = $matches[1];
