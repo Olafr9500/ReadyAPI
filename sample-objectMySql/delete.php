@@ -26,6 +26,7 @@ use \Firebase\JWT\JWT;
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $database = new DatabaseMySQL();
     $database = new DatabaseMsSQL();
+    $user = null;
     if (!is_null($database->conn)) {
         $checkSecure = true;
         if (SECURE_API) {
