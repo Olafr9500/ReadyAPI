@@ -180,9 +180,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 $samples = $sample->readAll($orderby, $sync, $lazy);
                 if (count($samples) > 0) {
                     $sample->logInfo("READ ALL - ".$sample->tableName, $user);
-                    displayError("no", array("response" => $samples, "orderby" => $orderby, "sync" => $sync));
+                    displayError("no", array("response" => $samples));
                 } else {
-                    displayError("no", array("errorMessage" => $sample->errorMessage));
+                    displayError("Empty", array("errorMessage" => $sample->errorMessage));
                 }
             }
         }
