@@ -2,7 +2,8 @@ test.php
 
 vendor
 composer.lock
-.vscode/settings.json
+.vscode
+.jwt-secret
 
 user
 log
