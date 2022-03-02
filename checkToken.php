@@ -20,13 +20,12 @@ require 'vendor/autoload.php';
 use \Firebase\JWT\JWT;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $database = new DatabaseMySQL();
-    $database = new DatabaseMsSQL();
+    $database = new DatabaseSample();
     if (!is_null($database->conn)) {
         if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
             $jwt = $matches[1];
             if ($jwt && $jwt != "undefined") {
-                $jwt = JWT::decode($jwt, $key, array('HS256'));
+                $jwt = JWT::decode($jwt, $keyJWT, array('HS256'));
                 if (checkJWT($jwt)) {
                     $data = $jwt->data;
                     $user = new User($database->conn);

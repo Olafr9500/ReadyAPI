@@ -15,13 +15,12 @@ include_once './config/databaseMySQL.php';
 include_once './config/objectMySql.php';
 include_once './object/user.php';
 
-require __DIR__ . '/vendor/autoload.php';
+require 'vendor/autoload.php';
 
 use \Firebase\JWT\JWT;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $database = new DatabaseMySQL();
-    $database = new DatabaseMsSQL();
+    $database = new DatabaseSample();
     if (!is_null($database->conn)) {
         $user = new User($database->conn);
         if ((isset($_SERVER["PHP_AUTH_USER"])) && (isset($_SERVER["PHP_AUTH_PW"]))) {
@@ -40,7 +39,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     "iss" => $issuer,
                     "data" => $user
                 );
-                $jwt = JWT::encode($token, $key);
+                $jwt = JWT::encode($token, $keyJWT);
                 $user->logInfo("CONNECT", $user);
                 displayError("no", array("response" => $jwt));
             } else {
