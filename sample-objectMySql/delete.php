@@ -11,21 +11,17 @@ include_once '../config/init.php';
 include_once '../config/function.php';
 include_once '../config/iconnection.php';
 include_once '../config/database.php';
-include_once '../config/databaseMySQL.php';
-include_once '../config/databaseMsSQL.php';
+include_once '../config/databaseSample.php';
 include_once '../config/objectMySql.php';
-include_once '../config/objectMsSql.php';
 include_once '../object/user.php';
-include_once '../object/sample-objectMySql.php';
-include_once '../object/sample-objectMsSql.php';
+include_once '../object/sampleObject.php';
 
 require '../vendor/autoload.php';
 
 use \Firebase\JWT\JWT;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $database = new DatabaseMySQL();
-    $database = new DatabaseMsSQL();
+    $database = new DatabaseSample();
     $user = null;
     if (!is_null($database->conn)) {
         $checkSecure = true;
@@ -33,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
                 $jwt = $matches[1];
                 if ($jwt) {
-                    $jwt = JWT::decode($jwt, $key, array('HS256'));
+                    $jwt = JWT::decode($jwt, $keyJWT, array('HS256'));
                     if (checkJWT($jwt)) {
                         $data = $jwt->data;
                         $user = new User($database->conn);
