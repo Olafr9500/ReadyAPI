@@ -2,62 +2,19 @@
 
 namespace ReadyAPI;
 
+use ArrayObject;
 use PDO;
 
 /**
  * Class MySql object
  */
-class ObjectMySql implements IConnection
+class ObjectMySql extends ObjectSQL
 {
-    /**
-     * Connector PDO MySQL
-     *
-     * @var PDO
-     */
     private $conn;
-    /**
-     * Name table SQL
-     *
-     * @var string
-     */
     private $tableName;
-    /**
-     * List column table SQL with metadata
-     *
-     * @var array
-     */
     private $table = [];
-    /**
-     * Primary Key in table
-     *
-     * @var int
-     */
     public $id;
-    /**
-     * Error Message
-     *
-     * @var string
-     */
     public $errorMessage;
-    /**
-     * Constructor of the MySql object
-     *
-     * @param PDO $db Database connector
-     * @param string $nameBase Database Name
-     * @param array $fieldsRename List of object variables in the same order as the database columns
-     */
-    public function __construct($db, $nameBase, $fieldsRename = ["id"])
-    {
-        $this->conn = $db;
-        $this->tableName = $nameBase;
-        $stmt = $db->prepare("DESCRIBE `" . $nameBase . "`");
-        $stmt->execute();
-        $this->table = $stmt->fetchAll();
-        foreach ($this->table as $key => $row) {
-            $row["Rename"] = array_shift($fieldsRename);
-            $this->table[$key] = $row;
-        }
-    }
 
     public function __get($property)
     {
@@ -68,15 +25,34 @@ class ObjectMySql implements IConnection
     {
         $this->$property = $value;
     }
+
     /**
-     * Add a new entry for the object in the database
+     * Constructor of the MySql object
      *
-     * @param boolean $setId Activate auto increment or not
-     * @return boolean Insertion validation status
+     * @param PDO $db Database connector
+     * @param string $nameBase Database Name
+     * @param array $fieldsWant List of object we want
+     * @param array $fieldsRename List of object variables in the same order as the database columns
      */
+    public function __construct($db, $nameBase, $fieldsWant, $fieldsRename = ["id"])
+    {
+        $stmt = $db->prepare("DESCRIBE `" . $nameBase . "`");
+        $table = [];
+        if ($stmt->execute()) {
+            $table = $stmt->fetchAll();
+            foreach ($table as $key => $row) {
+                if (array_search($row["Field"], $fieldsWant) !== false) {
+                    $row["Rename"] = $fieldsRename[array_search($row["Field"], $fieldsWant)];
+                    $table[$key] = $row;
+                }
+            }
+        }
+        parent::__construct($db, $nameBase, $table);
+    }
+
     public function create($setId = false)
     {
-        $query = "insert into `" . $this->tableName . "` set ";
+        $query = "INSERT INTO `" . $this->tableName . "` SET ";
         $values = [];
         foreach ($this->table as $key => $row) {
             if (($key != 0) || ($setId)) {
@@ -90,20 +66,17 @@ class ObjectMySql implements IConnection
                 $this->id = $this->conn->lastInsertId();
             }
             return true;
-        } else {
-            $this->errorMessage = $stmt->errorInfo();
         }
+        $this->errorMessage = $stmt->errorInfo();
         return false;
     }
-    /**
-     * Retrieves data of the object in the database
-     *
-     * @return void Data recovery status
-     */
+
     public function read()
     {
         if (isset($this->id)) {
-            $stmt = $this->conn->prepare("SELECT * from `" . $this->tableName . "` where `" . $this->table[0]["Field"] . "` = ?");
+            $head = $this->constructHead();
+            $query = "SELECT " . ($head == "" ? "*" : $head) . " FROM `" . $this->tableName . "` WHERE `" . $this->table[0]["Field"] . "` = ?";
+            $stmt = $this->conn->prepare($query);
             if ($stmt->execute(array($this->id))) {
                 $result = $stmt->fetch(PDO::FETCH_NUM);
                 if (!empty($result)) {
@@ -129,24 +102,19 @@ class ObjectMySql implements IConnection
         }
         return false;
     }
-    /**
-     * Retrieves all of the object's entries in the database
-     *
-     * @param integer $orderby
-     * @param string $sync
-     * @return array|false List of database entries or false
-     */
+
     public function readAll($orderby = [0], $sync = ["asc"])
     {
         if (count($orderby) == count($sync)) {
-            $query = "SELECT * from `" . $this->tableName . "` ORDER BY";
+            $head = $this->constructHead();
+            $query = "SELECT " . ($head == "" ? "*" : $head) . " FROM `" . $this->tableName . "` ORDER BY";
             foreach ($orderby as $key => $order) {
                 $query .= " `" . $this->table[$order]["Field"] . "` " . $sync[$key];
                 if ($key != (count($orderby) - 1)) {
                     $query .= ",";
                 }
             }
-            $stmt = $this->conn->prepare($query . " LIMIT 200");
+            $stmt = $this->conn->prepare($query);
             if ($stmt->execute()) {
                 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 if (count($result) > 0) {
@@ -168,21 +136,12 @@ class ObjectMySql implements IConnection
         }
         return false;
     }
-    /**
-     * Retrieves object's entries in the database with a condition
-     *
-     * @param array $index
-     * @param array $value
-     * @param array $condition
-     * @param array $separator
-     * @param array $orderby
-     * @param array $sync
-     * @return array|false List of database entries or false
-     */
+
     public function readBy($index, $value, $condition, $separator, $orderby = [0], $sync = ["asc"])
     {
         if ((count($orderby) == count($sync)) && (count($index) == count($condition))) {
-            $query = "SELECT * FROM `" . $this->tableName . "` WHERE ";
+            $head = $this->constructHead();
+            $query = "SELECT " . ($head == "" ? "*" : $head) . " FROM `" . $this->tableName . "` WHERE ";
             $queryOrder = " ORDER BY";
             foreach ($orderby as $key => $order) {
                 $queryOrder .= " `" . $this->table[$order]["Field"] . "` " . $sync[$key];
@@ -191,6 +150,7 @@ class ObjectMySql implements IConnection
                 }
             }
             foreach ($condition as $key => $row) {
+                $valueRead = $value[$key];
                 switch ($row) {
                     case "=":
                     case "!=":
@@ -204,12 +164,11 @@ class ObjectMySql implements IConnection
                         $query .= "`" . $this->table[$index[$key]]["Field"] . "` " . $row . " ?";
                         break;
                     case "IN":
-                        if (gettype($value[$key]) == "array") {
-                            $trueValue = $value[$key];
+                        if ($valueRead instanceof ArrayObject) {
                             $query .= "`" . $this->table[$index[$key]]["Field"] . "` IN (";
                             $input = "";
                             $i = 0;
-                            foreach ($trueValue as $row) {
+                            foreach ($valueRead as $row) {
                                 $input .= "?,";
                                 $value[$key + $i] = $row;
                                 $i++;
@@ -220,7 +179,7 @@ class ObjectMySql implements IConnection
                         }
                         break;
                     case "BETWEEN":
-                        if ((gettype($value[$key]) == "array") && (count($value[$key]) == 2)) {
+                        if (($valueRead instanceof ArrayObject) && (count($valueRead) == 2)) {
                             $query = "`" . $this->table[$index]["Field"] . "` BETWEEN ? AND ?";
                         }
                         break;
@@ -253,11 +212,7 @@ class ObjectMySql implements IConnection
         }
         return [];
     }
-    /**
-     * Edit an entry for a database object
-     *
-     * @return boolean True if the modification has been made
-     */
+
     public function update()
     {
         $query = "UPDATE `" . $this->tableName . "` SET ";
@@ -282,11 +237,7 @@ class ObjectMySql implements IConnection
         }
         return false;
     }
-    /**
-     * Delete an entry of a database object
-     *
-     * @return boolean True if the modification has been made
-     */
+
     public function delete()
     {
         $stmt = $this->conn->prepare("DELETE FROM `" . $this->tableName . "` WHERE `" . $this->table[0]["Field"] . "` = ?");
@@ -294,136 +245,6 @@ class ObjectMySql implements IConnection
             return true;
         } else {
             $this->errorMessage = $stmt->errorInfo();
-        }
-        return false;
-    }
-    /**
-     * Check if the ordering index is indeed contained in the database table
-     *
-     * @param string|boolean $orderby
-     * @return boolean|integer Return false if absent from the table
-     */
-    public function isOrderByCorrect($orderby)
-    {
-        if (in_array($orderby, $this->getFieldsRename())) {
-            return intval(array_search($orderby, $this->getFieldsRename()));
-        } else {
-            if (intval($orderby < count($this->table))) {
-                return intval($orderby);
-            }
-        }
-        return false;
-    }
-    /**
-     * Check if the ordering sense exist
-     *
-     * @param string $sync
-     * @return boolean
-     */
-    public function isSyncCorrect($sync)
-    {
-        return in_array(strtolower($sync), ["asc", "desc"]);
-    }
-    /**
-     * Get only the names of columns
-     *
-     * @return array
-     */
-    public function getFieldsRename()
-    {
-        $ret = [];
-        foreach ($this->table as $row) {
-            $ret[] = $row["Rename"];
-        }
-        return $ret;
-    }
-    /**
-     * Check if the variables in the object is empty or not.
-     *
-     * @return boolean|array If empty, return an array with checking by variables.
-     */
-    public function isEmpty()
-    {
-        $ret = false;
-        $values = array();
-        foreach ($this->table as $row) {
-            if ($row["Rename"] != "id") {
-                switch (explode('(', $row["Type"])[0]) {
-                    case "tinyint":
-                        $ret = $ret || (!in_array($this->__get($row["Rename"]), [0, 1]));
-                        $values[$row["Rename"]] = (in_array($this->__get($row["Rename"]), [0, 1]) ? 'false' : 'true');
-                        break;
-                    case "int":
-                    case "float":
-                    case "double":
-                        $ret = $ret || $this->__get($row["Rename"]) < 0;
-                        $values[$row["Rename"]] = ($this->__get($row["Rename"]) < 0 ? 'true' : 'false');
-                        break;
-                    case "varchar":
-                    case "datetime":
-                    case "date":
-                    case "time":
-                        $value = $this->__get($row["Rename"]);
-                        $ret = $ret || (empty($value));
-                        $values[$row["Rename"]] = (empty($value) ? 'true' : 'false');
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-        return $ret ? $values : false;
-    }
-    /**
-     * Check if the variables in the object is correct or not.
-     *
-     * @return boolean|array If date incorrect, return an array with checking by variables.
-     */
-    public function isDataCorrect()
-    {
-        // $ret = true;
-        // $values = array();
-        // foreach ($this->table as $key => $row) {
-        //     if ($row["Rename"] != "id") {
-        //         switch (strtolower($row["Rename"])) {
-        //             case "ip":
-        //             case "ipv4":
-        //                 $ret = $ret && (filter_var($this->__get($row["Rename"]), FILTER_VALIDATE_IP));
-        //                 $values[$row["Rename"]] = (filter_var($this->__get($row["Rename"]), FILTER_VALIDATE_IP) ? 'true' : 'false');
-        //                 break;
-        //             case "package":
-        //                 // $ret = $ret && ();
-        //                 break;
-        //             case "datetime":
-        //                 $ret = $ret && (preg_match("/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (0[0-9]|1[1-9]|2|[0-3]):([0-5][0-9]):([0-5][0-9])$/", $this->__get($row["Rename"])));
-        //                 $values[$row["Rename"]] = (preg_match("/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (0[0-9]|1[1-9]|2|[0-3]):([0-5][0-9]):([0-5][0-9])$/", $this->__get($row["Rename"])) ? 'true' : 'false');
-        //                 break;
-        //             case "date":
-        //                 $ret = $ret && (preg_match("/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/", $this->__get($row["Rename"])));
-        //                 $values[$row["Rename"]] = (preg_match("/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/", $this->__get($row["Rename"])) ? 'true' : 'false');
-        //                 break;
-        //             default:
-        //                 break;
-        //         }
-        //     }
-        // }
-        // return $ret ? true : $values;
-        return true;
-    }
-    /**
-     * Make log
-     *
-     * @param string $action
-     * @param int $user
-     * @return boolean
-     */
-    public function logInfo($action, $user = null)
-    {
-        if (gettype($action) == "string") {
-            if (!is_dir("log")) {
-                mkdir('log');
-            }
-            error_log(date("H:i:s") . " (" . ($user instanceof User ? $user->id : "Not Connected") . ") - " . $action . "\n", 3, "log/" . date("Y-m-d") . ".log");
         }
         return false;
     }

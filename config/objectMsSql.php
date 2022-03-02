@@ -2,18 +2,14 @@
 
 namespace ReadyAPI;
 
+use ArrayObject;
 use PDO;
 
 /**
  * Class MsSql object
  */
-class ObjectMsSql implements IConnection
+class ObjectMsSql extends ObjectSQL
 {
-    private $conn;
-    private $tableName;
-    private $table = [];
-    public $id;
-    public $errorMessage;
     /**
      * Constructor of the MsSql object
      *
@@ -24,42 +20,32 @@ class ObjectMsSql implements IConnection
      */
     public function __construct($db, $nameBase, $fieldsWant, $fieldsRename = ["id"])
     {
-        $this->conn = $db;
-        $this->tableName = $nameBase;
-        $query = "EXEC SP_COLUMNS  " . $this->tableName;
-        $stmt = sqlsrv_query($db, $query);
+        $table = [];
+        $stmt = sqlsrv_query($db, "EXEC SP_COLUMNS  " . $nameBase);
         if ($stmt) {
             while ($column = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
-                if (array_search($column["COLUMN_NAME"], $fieldsWant) !== false) {
-                    $column["Rename"] = $fieldsRename[array_search($column["COLUMN_NAME"], $fieldsWant)];
-                    $this->table[] = $column;
+                $returnColumn = [];
+                if (array_search($column["Field"], $fieldsWant) !== false) {
+                    $returnColumn['Field'] = $column["Field"];
+                    $returnColumn['Type'] = $column['TYPE_NAME'] == 'int identity' ? 'int' : $column['TYPE_NAME'];
+                    $returnColumn['Null'] = $column['IS_NULLABLE'];
+                    $returnColumn['Key'] = $column['TYPE_NAME'] == 'int identity' ? 'PRI' : '';
+                    $returnColumn['Default'] = "NULL";
+                    $returnColumn["Rename"] = $fieldsRename[array_search($column["Field"], $fieldsWant)];
+                    $table[] = $returnColumn;
                 }
             }
         }
+        parent::__construct($db, $nameBase, $table);
     }
 
-    public function __get($property)
-    {
-        return $this->$property;
-    }
-
-    public function __set($property, $value)
-    {
-        $this->$property = $value;
-    }
-    /**
-     * Add a new entry for the object in the database
-     *
-     * @param boolean $setId Activate auto increment or not
-     * @return boolean Insertion validation status
-     */
     public function create($setId = false)
     {
         $query = "INSERT INTO " . $this->tableName . " SET ";
         $values = [];
         foreach ($this->table as $key => $row) {
             if (($key != 0) || ($setId)) {
-                $query .= "" . $row["COLUMN_NAME"] . " = ?, ";
+                $query .= "" . $row["Field"] . " = ?, ";
                 $values[] = $this->__get($this->table[$key]["Rename"]);
             }
         }
@@ -71,21 +57,16 @@ class ObjectMsSql implements IConnection
                 $this->id = sqlsrv_get_field($stmt, 0);
             }
             return true;
-        } else {
-            $this->errorMessage = sqlsrv_errors();
         }
+        $this->errorMessage = sqlsrv_errors();
         return false;
     }
-    /**
-     * Retrieves data of the object in the database
-     *
-     * @return void Data recovery status
-     */
+
     public function read()
     {
         if (isset($this->id)) {
             $head = $this->constructHead();
-            $query = "SELECT " . ($head == "" ? "*" : $head) . " FROM " . $this->tableName . " WHERE " . $this->table[0]["COLUMN_NAME"] . " = ?";
+            $query = "SELECT " . ($head == "" ? "*" : $head) . " FROM " . $this->tableName . " WHERE " . $this->table[0]["Field"] . " = ?";
             $stmt = sqlsrv_query($this->conn, $query, array($this->id));
             if ($stmt) {
                 $result = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_NUMERIC);
@@ -112,13 +93,14 @@ class ObjectMsSql implements IConnection
         }
         return false;
     }
+
     public function readAll($orderby = [0], $sync = ["asc"])
     {
         if (count($orderby) == count($sync)) {
             $head = $this->constructHead();
-            $query = "SELECT " . ($head == "" ? "*" : $head) . " from " . $this->tableName . " ORDER BY";
+            $query = "SELECT " . ($head == "" ? "*" : $head) . " FROM " . $this->tableName . " ORDER BY";
             foreach ($orderby as $key => $order) {
-                $query .= " " . $this->table[$order]["COLUMN_NAME"] . " " . $sync[$key];
+                $query .= " " . $this->table[$order]["Field"] . " " . $sync[$key];
                 if ($key != (count($orderby) - 1)) {
                     $query .= ",";
                 }
@@ -128,8 +110,8 @@ class ObjectMsSql implements IConnection
                 $result = [];
                 $key = 0;
                 while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
-                    $restaurant = new $this($this->conn);
-                    $restaurant->id = $row[$this->table[0]["COLUMN_NAME"]];
+                    $restaurant = new $this($this->conn, $this->tableName, $this->getFieldsRename());
+                    $restaurant->id = $row[$this->table[0]["Field"]];
                     if ($restaurant->read()) {
                         $result[$key] = $restaurant;
                         $key++;
@@ -145,19 +127,21 @@ class ObjectMsSql implements IConnection
         }
         return false;
     }
+
     public function readBy($index, $value, $condition, $separator, $orderby = [0], $sync = ["asc"])
     {
         if ((count($orderby) == count($sync)) && (count($index) == count($condition))) {
             $head = $this->constructHead();
-            $query = "SELECT TOP 200 " . ($head == "" ? "*" : $head) . " FROM " . $this->tableName . " WHERE ";
+            $query = "SELECT " . ($head == "" ? "*" : $head) . " FROM " . $this->tableName . " WHERE ";
             $queryOrder = " ORDER BY";
             foreach ($orderby as $key => $order) {
-                $queryOrder .= " " . $this->table[$order]["COLUMN_NAME"] . " " . $sync[$key];
+                $queryOrder .= " " . $this->table[$order]["Field"] . " " . $sync[$key];
                 if ($key != (count($orderby) - 1)) {
                     $queryOrder .= ",";
                 }
             }
             foreach ($condition as $key => $row) {
+                $valueRead = $value[$key];
                 switch ($row) {
                     case "=":
                     case "!=":
@@ -168,14 +152,17 @@ class ObjectMsSql implements IConnection
                     case "<=":
                     case "LIKE":
                     case "NOT LIKE":
-                        $query .= "" . $this->table[$index[$key]]["COLUMN_NAME"] . " " . $row . " ?";
+                        $query .= "" . $this->table[$index[$key]]["Field"] . " " . $row . " ?";
                         break;
                     case "IN":
-                        if (gettype($value[$key]) == "array") {
-                            $query .= "" . $this->table[$index]["COLUMN_NAME"] . " IN (";
+                        if ($valueRead instanceof ArrayObject) {
+                            $query .= "" . $this->table[$index]["Field"] . " IN (";
                             $input = "";
-                            foreach ($value[$key] as $row) {
+                            $i = 0;
+                            foreach ($valueRead as $row) {
                                 $input .= "?,";
+                                $value[$key + $i] = $row;
+                                $i++;
                             }
                             $query = $query . substr($input, 0, strlen($input) - 1) . ")";
                         } else {
@@ -183,12 +170,12 @@ class ObjectMsSql implements IConnection
                         }
                         break;
                     case "BETWEEN":
-                        if ((gettype($value[$key]) == "array") && (count($value[$key]) == 2)) {
-                            $query = "" . $this->table[$index]["COLUMN_NAME"] . " BETWEEN ? AND ?";
+                        if (($valueRead instanceof ArrayObject) && (count($valueRead) == 2)) {
+                            $query = "" . $this->table[$index]["Field"] . " BETWEEN ? AND ?";
                         }
                         break;
                     case "IS":
-                        $query = "" . $this->table[$index]["COLUMN_NAME"] . " IS " . $value[$key];
+                        $query = "" . $this->table[$index]["Field"] . " IS " . $valueRead;
                         break;
                 }
                 if ($key != (count($index) - 1)) {
@@ -201,7 +188,7 @@ class ObjectMsSql implements IConnection
                 $key = 0;
                 while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
                     $restaurant = new $this($this->conn);
-                    $restaurant->id = $row[$this->table[0]["COLUMN_NAME"]];
+                    $restaurant->id = $row[$this->table[0]["Field"]];
                     if ($restaurant->read()) {
                         $result[$key] = $restaurant;
                         $key++;
@@ -217,11 +204,7 @@ class ObjectMsSql implements IConnection
         }
         return [];
     }
-    /**
-     * Edit an entry for a database object
-     *
-     * @return boolean True if the modification has been made
-     */
+
     public function update()
     {
         $query = "UPDATE " . $this->tableName . " SET ";
@@ -232,149 +215,27 @@ class ObjectMsSql implements IConnection
                 if (json_decode($val) == null) {
                     $val = utf8_decode($val);
                 }
-                $query .= "" . $row["COLUMN_NAME"] . " = ?, ";
+                $query .= "" . $row["Field"] . " = ?, ";
                 $values[] = $val;
             }
         }
-        $query = substr($query, 0, -2) . " WHERE " . $this->table[0]["COLUMN_NAME"] . " = ?";
+        $query = substr($query, 0, -2) . " WHERE " . $this->table[0]["Field"] . " = ?";
         $values[] = $this->id;
         $stmt = sqlsrv_query($this->conn, $query, $values);
         if ($stmt) {
             return true;
-        } else {
-            $this->errorMessage = sqlsrv_errors();
         }
+        $this->errorMessage = sqlsrv_errors();
         return false;
     }
-    /**
-     * Delete an entry of a database object
-     *
-     * @return boolean True if the modification has been made
-     */
+
     public function delete()
     {
-        $stmt = sqlsrv_query($this->conn, "DELETE FROM " . $this->tableName . " WHERE " . $this->table[0]["COLUMN_NAME"] . " = ?", array($this->id));
+        $stmt = sqlsrv_query($this->conn, "DELETE FROM " . $this->tableName . " WHERE " . $this->table[0]["Field"] . " = ?", array($this->id));
         if ($stmt) {
             return true;
-        } else {
-            $this->errorMessage = sqlsrv_errors();
         }
+        $this->errorMessage = sqlsrv_errors();
         return false;
-    }
-    /**
-     * Check if the ordering index is indeed contained in the database table
-     *
-     * @param string|boolean $orderby
-     * @return boolean|integer Return false if absent from the table
-     */
-    public function isOrderByCorrect($orderby)
-    {
-        if (in_array($orderby, $this->getFieldsRename())) {
-            return intval(array_search($orderby, $this->getFieldsRename()));
-        } else {
-            if (intval($orderby < count($this->table))) {
-                return intval($orderby);
-            }
-        }
-        return false;
-    }
-    /**
-     * Check if the ordering sense exist
-     *
-     * @param string $sync
-     * @return boolean
-     */
-    public function isSyncCorrect($sync)
-    {
-        return in_array(strtolower($sync), ["asc", "desc"]);
-    }
-    /**
-     * Undocumented function
-     *
-     * @return array
-     */
-    public function getFieldsRename()
-    {
-        $ret = [];
-        foreach ($this->table as $row) {
-            $ret[] = $row["Rename"];
-        }
-        return $ret;
-    }
-    /**
-     * Check if the variables in the object is empty or not.
-     *
-     * @return boolean|array If empty, return an array with checking by variables.
-     */
-    public function isEmpty()
-    {
-        $ret = false;
-        $values = array();
-        foreach ($this->table as $row) {
-            if ($row["Rename"] != "id") {
-                switch (explode('(', $row["Type"])[0]) {
-                    case "tinyint":
-                        $ret = $ret || (!in_array($this->__get($row["Rename"]), [0, 1]));
-                        $values[$row["Rename"]] = (in_array($this->__get($row["Rename"]), [0, 1]) ? 'false' : 'true');
-                        break;
-                    case "int":
-                    case "float":
-                    case "double":
-                        $ret = $ret || $this->__get($row["Rename"]) < 0;
-                        $values[$row["Rename"]] = ($this->__get($row["Rename"]) < 0 ? 'true' : 'false');
-                        break;
-                    case "varchar":
-                    case "datetime":
-                    case "date":
-                    case "time":
-                        $value = $this->__get($row["Rename"]);
-                        $ret = $ret || (empty($value));
-                        $values[$row["Rename"]] = (empty($value) ? 'true' : 'false');
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-        return $ret ? $values : false;
-    }
-    /**
-     * Make log
-     *
-     * @param string $action
-     * @param int $user
-     * @return boolean
-     */
-    public function logInfo($action, $user = null)
-    {
-        if (gettype($action) == "string") {
-            if (!is_dir("log")) {
-                mkdir('log');
-            }
-            error_log(date("H:i:s") . " (" . ($user instanceof User ? $user->id : "Not Connected") . ") - " . $action . "\n", 3, "log/" . date("Y-m-d") . ".log");
-        }
-        return false;
-    }
-    /**
-     * Check if the variables in the object is correct or not.
-     *
-     * @return boolean|array If date incorrect, return an array with checking by variables.
-     */
-    public function isDataCorrect()
-    {
-        return true;
-    }
-    /**
-     * return head of table
-     *
-     * @return string
-     */
-    public function constructHead()
-    {
-        $head = "";
-        foreach ($this->table as $key => $row) {
-            $head .= $row["COLUMN_NAME"] . ($key != count($this->table) - 1 ? "," : "");
-        }
-        return $head;
     }
 }

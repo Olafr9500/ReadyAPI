@@ -2,7 +2,7 @@
 
 namespace ReadyAPI;
 
-class SampleObject extends ObjectMsSql
+class SampleObject extends ObjectMySql
 {
     public $nom;
     public $directory;

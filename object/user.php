@@ -9,7 +9,7 @@ class User extends ObjectMySql
 
     public function __construct($db)
     {
-        parent::__construct($db, "utilisateur", ["id", "mail", "password"]);
+        parent::__construct($db, "utilisateur", ["id", "mail", "password"], ["id", "mail", "password"]);
     }
 
     public function connection()
