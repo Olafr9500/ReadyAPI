@@ -10,22 +10,6 @@ use PDO;
  */
 class ObjectMySql extends ObjectSQL
 {
-    private $conn;
-    private $tableName;
-    private $table = [];
-    public $id;
-    public $errorMessage;
-
-    public function __get($property)
-    {
-        return $this->$property;
-    }
-
-    public function __set($property, $value)
-    {
-        $this->$property = $value;
-    }
-
     /**
      * Constructor of the MySql object
      *
@@ -39,11 +23,11 @@ class ObjectMySql extends ObjectSQL
         $stmt = $db->prepare("DESCRIBE `" . $nameBase . "`");
         $table = [];
         if ($stmt->execute()) {
-            $table = $stmt->fetchAll();
-            foreach ($table as $key => $row) {
+            $result = $stmt->fetchAll();
+            foreach ($result as $row) {
                 if (array_search($row["Field"], $fieldsWant) !== false) {
                     $row["Rename"] = $fieldsRename[array_search($row["Field"], $fieldsWant)];
-                    $table[$key] = $row;
+                    $table[] = $row;
                 }
             }
         }
