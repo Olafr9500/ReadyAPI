@@ -9,14 +9,12 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 
 include_once '../config/init.php';
 include_once '../config/function.php';
-include_once '../config/iconnection.php';
-include_once '../config/database.php';
-include_once '../config/databaseSample.php';
-include_once '../config/objectMySql.php';
-include_once '../object/user.php';
-include_once '../object/sampleObject.php';
 
 require '../vendor/autoload.php';
+
+include_once '../database/databaseSample.php';
+include_once '../object/user.php';
+include_once '../object/sampleObject.php';
 
 use \Firebase\JWT\JWT;
 

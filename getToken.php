@@ -7,15 +7,13 @@ header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-include_once './config/init.php';
-include_once './config/function.php';
-include_once './config/iconnection.php';
-include_once './config/database.php';
-include_once './config/databaseMySQL.php';
-include_once './config/objectMySql.php';
-include_once './object/user.php';
+include_once 'config/init.php';
+include_once 'config/function.php';
 
 require 'vendor/autoload.php';
+
+include_once 'database/databaseSample.php';
+include_once 'object/user.php';
 
 use \Firebase\JWT\JWT;
 
