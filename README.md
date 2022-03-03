@@ -6,9 +6,9 @@ Import with Git :
 $ git clone https://github.com/Olafr9500/ReadyAPI.git <your Project>/api
 ```
 
-And get the dependencies with Composer :
+And get the dependencies and build the autoload with Composer :
 ```bash
-$ composer install
+$ composer run-script build
 ```
 ## How to use it
 > In your database, make sure each table has a primary key in the first position.
@@ -54,6 +54,12 @@ $ composer install
 - In the file **`config/function.php`**, change the "SECURE_API" constant from true to false.
     ```php
     define("SECURE_API", (true|false), true);
+    ```
+
+### Build for autoload
+- After writing your objects, build the application to take them into autoload.
+    ```bash
+    $ composer run-script build
     ```
 ## About
 ### Contribution
