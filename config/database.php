@@ -2,12 +2,8 @@
 
 namespace ReadyAPI;
 
-use PDO;
-use PDOException;
-
-class Database
+abstract class Database
 {
-    public static $TypeConnector = ['mysql', 'mariadb', 'mssql'];
 
     protected $host;
     protected $dbName;
@@ -17,7 +13,7 @@ class Database
     public $conn;
     public $errorMessage;
 
-    public function __construct($type, $host, $dbName, $userName, $password)
+    public function __construct($host, $dbName, $userName, $password)
     {
         $this->conn = null;
         $this->errorMessage = null;
@@ -25,37 +21,9 @@ class Database
         $this->dbName = $dbName;
         $this->userName = $userName;
         $this->password = $password;
-        switch ($type) {
-            case 'mysql':
-            case 'mariadb':
-                $this->connectMySql();
-                break;
-            case 'mssql':
-                $this->connectMsSql();
-                break;
-            default:
-                throw "Connection type not set";
-                break;
-        }
     }
 
-    private function connectMySql()
-    {
-        try {
-            $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->dbName, $this->userName, $this->password);
-        } catch (PDOException $exception) {
-            $this->errorMessage = $exception->getMessage();
-        }
-    }
-
-    private function connectMsSql()
-    {
-        $this->conn = sqlsrv_connect($this->host, array("UID" => $this->userName, "PWD" => $this->password, "Database" => $this->dbName, "CharacterSet" => "UTF-8"));
-        if ($this->conn === false) {
-            $this->errorMessage = sqlsrv_errors();
-            $this->conn = null;
-        }
-    }
+    abstract protected function connect();
 
     public static function encodePassword($password)
     {
