@@ -4,12 +4,11 @@ namespace ReadyAPI;
 
 class SampleObject extends ObjectMySql
 {
-    public $nom;
-    public $directory;
-    public $update;
+    public $variable;
 
     public function __construct($db)
     {
-        parent::__construct($db, "document", ["id", "nom", "directory", "update"], ["id", "nom", "directory", "update"]);
+        // TODO Update Table informations
+        parent::__construct($db, "<TableName>", ["id", "variable"], ["id", "variable"]);
     }
 }
