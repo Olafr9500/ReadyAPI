@@ -12,10 +12,6 @@ include_once '../config/function.php';
 
 require '../vendor/autoload.php';
 
-include_once '../database/databaseSample.php';
-include_once '../object/user.php';
-include_once '../object/sampleObject.php';
-
 use \Firebase\JWT\JWT;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {

@@ -23,8 +23,10 @@
         "firebase/php-jwt":"5.4.*"
     },
     "scripts": {
-        "post-install-cmd": [
-            "php -r \"echo md5(microtime().rand());\" > .jwt-secret"
+        "build" : [
+            "@composer install",
+            "php -r \"echo md5(microtime().rand());\" > .jwt-secret",
+            "@composer dump-autoload"
         ]
     },
     "autoload": {
@@ -35,7 +37,9 @@
             "config/iconnection.php",
             "config/object.php",
             "config/objectMySql.php",
-            "config/objectMsSql.php"
+            "config/objectMsSql.php",
+            "database/",
+            "object/"
         ]
     }
 }
