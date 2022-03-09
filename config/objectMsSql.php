@@ -25,13 +25,13 @@ class ObjectMsSql extends ObjectSQL
         if ($stmt) {
             while ($column = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
                 $returnColumn = [];
-                if (array_search($column["Field"], $fieldsWant) !== false) {
-                    $returnColumn['Field'] = $column["Field"];
+                if (array_search($column["COLUMN_NAME"], $fieldsWant) !== false) {
+                    $returnColumn['Field'] = $column["COLUMN_NAME"];
                     $returnColumn['Type'] = $column['TYPE_NAME'] == 'int identity' ? 'int' : $column['TYPE_NAME'];
                     $returnColumn['Null'] = $column['IS_NULLABLE'];
                     $returnColumn['Key'] = $column['TYPE_NAME'] == 'int identity' ? 'PRI' : '';
                     $returnColumn['Default'] = "NULL";
-                    $returnColumn["Rename"] = $fieldsRename[array_search($column["Field"], $fieldsWant)];
+                    $returnColumn["Rename"] = $fieldsRename[array_search($column["COLUMN_NAME"], $fieldsWant)];
                     $table[] = $returnColumn;
                 }
             }
