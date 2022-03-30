@@ -155,8 +155,9 @@ class ObjectMsSql extends ObjectSQL
                         $query .= "" . $this->table[$index[$key]]["Field"] . " " . $row . " ?";
                         break;
                     case "IN":
+                    case "NOT IN":
                         if ($valueRead instanceof ArrayObject) {
-                            $query .= "" . $this->table[$index]["Field"] . " IN (";
+                            $query .= "" . $this->table[$index]["Field"] . " ".$row." (";
                             $input = "";
                             $i = 0;
                             foreach ($valueRead as $row) {

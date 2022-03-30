@@ -148,6 +148,7 @@ class ObjectMySql extends ObjectSQL
                         $query .= "`" . $this->table[$index[$key]]["Field"] . "` " . $row . " ?";
                         break;
                     case "IN":
+                    case "NOT IN":
                         if ($valueRead instanceof ArrayObject) {
                             $query .= "`" . $this->table[$index[$key]]["Field"] . "` IN (";
                             $input = "";
