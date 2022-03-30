@@ -66,10 +66,10 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 $listCondition = explode(",", $_GET["condition"]);
                 $listAuthCondition = ["=", "!=", "<>", "<", ">", "<=", ">=","LIKE","NOT LIKE", "IN", "BETWEEN", "IS"];
                 foreach ($listIndex as $key => $row) {
-                    if (array_search($row, $sample->getFieldsRename())) {
+                    if (array_search($row, $sample->getFieldsRename()) !== false) {
                         $index[$key] = array_search($row, $sample->getFieldsRename());
                     } else {
-                        displayError("index ".$row." absent de la bdd", array("GET" => $_GET));
+                        displayError("index ".$row." missing in db", array("GET" => $_GET));
                         exit;
                     }
                 }
