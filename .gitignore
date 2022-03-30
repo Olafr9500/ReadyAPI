@@ -1,7 +1,6 @@
 test.php
 
 vendor
-composer.lock
 .vscode
 .jwt-secret
 
