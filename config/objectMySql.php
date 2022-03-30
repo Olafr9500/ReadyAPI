@@ -175,7 +175,7 @@ class ObjectMySql extends ObjectSQL
                     $query .= " " . ($separator[$key] ? $separator[$key] : "AND") . " ";
                 }
             }
-            $stmt = $this->conn->prepare($query . $queryOrder . "  LIMIT 200");
+            $stmt = $this->conn->prepare($query . $queryOrder);
             if ($stmt->execute($value)) {
                 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 if (count($result) > 0) {
