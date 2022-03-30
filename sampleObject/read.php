@@ -12,6 +12,7 @@ include_once '../config/function.php';
 
 require '../vendor/autoload.php';
 
+use ArrayObject;
 use \Firebase\JWT\JWT;
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
@@ -81,12 +82,13 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                         exit;
                     }
                 }
+                $value = new ArrayObject();
                 $value = explode(",", $_GET["value"]);
                 foreach ($value as $key => $row) {
                     if (preg_match("/(\[)/m", $row)) {
                         $i = 0;
                         $value[$key+$i]= str_replace("[", "", $row);
-                        $arrayRet = [];
+                        $arrayRet = new ArrayObject();
                         do {
                             $arrayRet[] = $value[$key+$i];
                             unset($value[$key+$i]);
