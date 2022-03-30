@@ -64,7 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 $index = [];
                 $listIndex = explode(",", $_GET["index"]);
                 $listCondition = explode(",", $_GET["condition"]);
-                $listAuthCondition = ["=", "!=", "<>", "<", ">", "<=", ">=","LIKE","NOT LIKE", "IN", "BETWEEN", "IS"];
+                $listAuthCondition = ["=", "!=", "<>", "<", ">", "<=", ">=","LIKE","NOT LIKE", "IN", "NOT IN", "BETWEEN", "IS"];
                 foreach ($listIndex as $key => $row) {
                     if (array_search($row, $sample->getFieldsRename()) !== false) {
                         $index[$key] = array_search($row, $sample->getFieldsRename());
