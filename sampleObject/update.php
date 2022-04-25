@@ -53,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if ($sample->read()) {
                     foreach ($sample->table as $column) {
                         if (($column["Rename"] != "id")) {
-                            $sample->$column["Rename"] = ($column["Rename"] == "update" ? date("Y-m-d") : (isset($_POST[$column["Rename"]]) ? $_POST[$column["Rename"]] : $sample->$column["Rename"]));
+                            $sample->__set($column["Rename"], ($column["Rename"] == "update" ? date("Y-m-d") : (isset($_POST[$column["Rename"]]) ? $_POST[$column["Rename"]] : $sample->$column["Rename"])));
                         }
                     }
                     if ($sample->isEmpty() === false) {

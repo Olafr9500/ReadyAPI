@@ -68,7 +68,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if ($checkVariablesSet) {
                 foreach ($sample->table as $column) {
                     if (($column["Rename"] != "id")) {
-                        $sample->$column["Rename"] = ($column["Rename"] == "update" ? date("Y-m-d") : $_POST[$column["Rename"]]);
+                        $sample->__set($column["Rename"], ($column["Rename"] == "update" ? date("Y-m-d") : $_POST[$column["Rename"]]));
                     }
                 }
                 if ($sample->isEmpty() === false) {
