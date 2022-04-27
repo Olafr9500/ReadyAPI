@@ -28,7 +28,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $user->password = $jwt->data->password;
                     if ($user->connection()) {
                         $user->logInfo("CHECK", $user);
-                        displayError("no", array("response" => $jwt));
+                        displayError("no", array("response" => $user));
                     } else {
                         displayError("Incorrect login token", array("messageError" => $user->errorMessage));
                         $checkSecure = false;
