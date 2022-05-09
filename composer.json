@@ -2,7 +2,7 @@
     "name": "olafr9500/readyapi",
     "description": "ReadyAPI is a PHP module to create REST API quickly",
     "type": "library",
-    "keywords":[
+    "keywords": [
         "php",
         "REST API",
         "API",
@@ -20,13 +20,18 @@
     "license": "MIT",
     "require": {
         "php": ">=5.4",
-        "firebase/php-jwt":"5.4.*"
+        "firebase/php-jwt": "5.4.*"
     },
     "scripts": {
-        "build" : [
-            "@composer install",
+        "build": [
             "php -r \"echo md5(microtime().rand());\" > .jwt-secret",
             "@composer dump-autoload"
+        ],
+        "post-install-cmd": [
+            "@build"
+        ],
+        "add": [
+            "php addObject"
         ]
     },
     "autoload": {
@@ -38,6 +43,7 @@
             "config/object.php",
             "config/objectMySql.php",
             "config/objectMsSql.php",
+            "config/static.php",
             "database/",
             "object/"
         ]

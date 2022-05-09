@@ -1,0 +1,74 @@
+<?php
+namespace ReadyAPI;
+
+include_once 'config/init.php';
+
+require 'vendor/autoload.php';
+
+if (isset($argv[1]) && isset($argv[2])) {
+    $nameObject = strtolower($argv[1]);
+    $databaseNameObject = $argv[2];
+    if (file_exists(__DIR__ . "/database/" . $databaseNameObject . ".php")) {
+        $database = "Database" . ucfirst($databaseNameObject);
+        $databaseComplet = "\ReadyAPI\\" . $database;
+        if (class_exists($databaseComplet)) {
+            $db = new $databaseComplet();
+            if (!is_null($db->conn)) {
+                $command = $db->conn->prepare("DESCRIBE `" . $nameObject . "`");
+                $command->execute();
+                $table = $command->fetchAll();
+
+                copy('object/sampleObject.php', 'object/' . $nameObject . '.php');
+                $file = file_get_contents('object/' . $nameObject . '.php');
+                $file = str_replace('SampleObject', ucfirst($nameObject), $file);
+                $file = str_replace('<TableName>', $nameObject, $file);
+                foreach ($table as $row) {
+                    if ($row['Key'] != 'PRI') {
+                        if ($row == end($table)) {
+                            $file = str_replace('$variable', '$' . $row['Field'], $file);
+                            $file = str_replace('"variable"]', '"' . $row['Field'] . '"]', $file);
+                        } else {
+                            $file = str_replace('$variable;', '$' . $row['Field'] . ';' . PHP_EOL . '    public $variable;', $file);
+                            $file = str_replace('"variable"]', '"' . $row['Field'] . '", "variable"]', $file);
+                        }
+                    }
+                }
+                file_put_contents('object/' . $nameObject . '.php', $file);
+
+                mkdir($nameObject, 0755);
+                copy('sampleObject/create.php', $nameObject . '/create.php');
+                copy('sampleObject/update.php', $nameObject . '/update.php');
+                copy('sampleObject/read.php', $nameObject . '/read.php');
+                copy('sampleObject/delete.php', $nameObject . '/delete.php');
+
+                $file = file_get_contents($nameObject . '/create.php');
+                $file = str_replace('SampleObject', ucfirst($nameObject), $file);
+                $file = str_replace('DatabaseSample', $database, $file);
+                file_put_contents($nameObject . '/create.php', $file);
+
+                $file = file_get_contents($nameObject . '/update.php');
+                $file = str_replace('SampleObject', ucfirst($nameObject), $file);
+                $file = str_replace('DatabaseSample', $database, $file);
+                file_put_contents($nameObject . '/update.php', $file);
+
+                $file = file_get_contents($nameObject . '/read.php');
+                $file = str_replace('SampleObject', ucfirst($nameObject), $file);
+                $file = str_replace('DatabaseSample', $database, $file);
+                file_put_contents($nameObject . '/read.php', $file);
+                
+                $file = file_get_contents($nameObject . '/delete.php');
+                $file = str_replace('SampleObject', ucfirst($nameObject), $file);
+                $file = str_replace('DatabaseSample', $database, $file);
+                file_put_contents($nameObject . '/delete.php', $file);
+            } else {
+                echo "Database not found";
+            }
+        } else {
+            echo "Class " . $database . " not found";
+        }
+    } else {
+        echo "The database object doesn't exist";
+    }
+} else {
+    echo "Usage: php addObject.php <ObjectName> <databaseObjectName>";
+}
