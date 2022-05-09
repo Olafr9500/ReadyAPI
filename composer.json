@@ -1,6 +1,5 @@
 {
     "name": "olafr9500/readyapi",
-    "version": "1.5.0",
     "description": "ReadyAPI is a PHP module to create REST API quickly",
     "type": "library",
     "keywords": [
