@@ -8,7 +8,6 @@ header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
 include_once '../config/init.php';
-include_once '../config/function.php';
 
 require '../vendor/autoload.php';
 
@@ -20,30 +19,30 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $user = null;
     if (!is_null($database->conn)) {
         $checkSecure = true;
-        if (SECURE_API) {
+        if (StaticFunctions::$SECURE_API) {
             if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
                 $jwt = $matches[1];
                 if ($jwt) {
                     $jwt = JWT::decode($jwt, $keyJWT, array('HS256'));
-                    if (checkJWT($jwt)) {
+                    if (StaticFunctions::checkJWT($jwt)) {
                         $data = $jwt->data;
                         $user = new User($database->conn);
                         $user->mail = $data->mail;
                         $user->password = $data->password;
                         if (!$user->connection()) {
-                            displayError("Incorrect login token", array("messageError" => $user->errorMessage));
+                            StaticFunctions::displayError("Incorrect login token", array("messageError" => $user->errorMessage));
                             $checkSecure = false;
                         }
                     } else {
-                        displayError("Incorrect login token", array("checkToken"=>checkJWT($jwt)));
+                        StaticFunctions::displayError("Incorrect login token", array("checkToken"=>StaticFunctions::checkJWT($jwt)));
                         $checkSecure = false;
                     }
                 } else {
-                    displayError("No token initialized", array("matches" => $matches));
+                    StaticFunctions::displayError("No token initialized", array("matches" => $matches));
                     $checkSecure = false;
                 }
             } else {
-                displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
+                StaticFunctions::displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
                 $checkSecure = false;
             }
         }
@@ -57,9 +56,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 $sample->id = $_GET["id"];
                 if ($sample->read($lazy)) {
                     $sample->logInfo("READ BY ID - ".$sample->tableName, $user);
-                    displayError("no", array("response" => $sample));
+                    StaticFunctions::displayError("no", array("response" => $sample));
                 } else {
-                    displayError("No element with this id", array("messageError" => $sample->errorMessage));
+                    StaticFunctions::displayError("No element with this id", array("messageError" => $sample->errorMessage));
                 }
             } elseif ((isset($_GET["index"])) && (isset($_GET["value"])) && (isset($_GET["condition"]))) {
                 $index = [];
@@ -70,7 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                     if (array_search($row, $sample->getFieldsRename()) !== false) {
                         $index[$key] = array_search($row, $sample->getFieldsRename());
                     } else {
-                        displayError("index ".$row." missing in db", array("GET" => $_GET));
+                        StaticFunctions::displayError("index ".$row." missing in db", array("GET" => $_GET));
                         exit;
                     }
                 }
@@ -78,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                     if (in_array($row, $listAuthCondition)) {
                         $condition[$key] = strval($row);
                     } else {
-                        displayError("Condition inexistante", array("expected" => $listAuthCondition, "have" => $row));
+                        StaticFunctions::displayError("Condition inexistante", array("expected" => $listAuthCondition, "have" => $row));
                         exit;
                     }
                 }
@@ -136,9 +135,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                         $response = array("response" => $samples);
                     }
                     $sample->logInfo("READ BY INDEX - ".$sample->tableName, $user);
-                    displayError("no", $response);
+                    StaticFunctions::displayError("no", $response);
                 } else {
-                    displayError("Empty", array("errorMessage" => $sample->errorMessage));
+                    StaticFunctions::displayError("Empty", array("errorMessage" => $sample->errorMessage));
                 }
             } else {
                 $orderby = [0];
@@ -172,15 +171,15 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 $samples = $sample->readAll($orderby, $sync, $lazy);
                 if (count($samples) > 0) {
                     $sample->logInfo("READ ALL - ".$sample->tableName, $user);
-                    displayError("no", array("response" => $samples));
+                    StaticFunctions::displayError("no", array("response" => $samples));
                 } else {
-                    displayError("Empty", array("errorMessage" => $sample->errorMessage));
+                    StaticFunctions::displayError("Empty", array("errorMessage" => $sample->errorMessage));
                 }
             }
         }
     } else {
-        displayError("Connection database fail", array("messageError" => $database->errorMessage));
+        StaticFunctions::displayError("Connection database fail", array("messageError" => $database->errorMessage));
     }
 } else {
-    displayError("Bad request method", array("expected" => "GET", "got" =>$_SERVER["REQUEST_METHOD"]));
+    StaticFunctions::displayError("Bad request method", array("expected" => "GET", "got" =>$_SERVER["REQUEST_METHOD"]));
 }

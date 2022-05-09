@@ -8,7 +8,6 @@ header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
 include_once '../config/init.php';
-include_once '../config/function.php';
 
 require '../vendor/autoload.php';
 
@@ -19,30 +18,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $user = null;
     if (!is_null($database->conn)) {
         $checkSecure = true;
-        if (SECURE_API) {
+        if (StaticFunctions::$SECURE_API) {
             if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
                 $jwt = $matches[1];
                 if ($jwt) {
                     $jwt = JWT::decode($jwt, $keyJWT, array('HS256'));
-                    if (checkJWT($jwt)) {
+                    if (StaticFunctions::checkJWT($jwt)) {
                         $data = $jwt->data;
                         $user = new User($database->conn);
                         $user->mail = $data->mail;
                         $user->password = $jwt->data->password;
                         if (!$user->connection()) {
-                            displayError("Incorrect login token", array("messageError" => $user->errorMessage));
+                            StaticFunctions::displayError("Incorrect login token", array("messageError" => $user->errorMessage));
                             $checkSecure = false;
                         }
                     } else {
-                        displayError("Incorrect login token", array("checkToken"=>"fail"));
+                        StaticFunctions::displayError("Incorrect login token", array("checkToken"=>"fail"));
                         $checkSecure = false;
                     }
                 } else {
-                    displayError("No token initialized", array("matches" => $matches));
+                    StaticFunctions::displayError("No token initialized", array("matches" => $matches));
                     $checkSecure = false;
                 }
             } else {
-                displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
+                StaticFunctions::displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
                 $checkSecure = false;
             }
         }
@@ -52,7 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (isset($_POST["id"])) {
                 $sample->id = $_POST["id"];
                 if ($sample->read()) {
-                    displayError("Id already existing", array("id" => $_POST["id"]));
+                    StaticFunctions::displayError("Id already existing", array("id" => $_POST["id"]));
                     exit;
                 } else {
                     $setId = true;
@@ -74,16 +73,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if ($sample->isEmpty() === false) {
                     if ($sample->isDataCorrect() === true) {
                         if ($sample->create($setId)) {
-                            displayError("no", array("response" => $sample));
+                            StaticFunctions::displayError("no", array("response" => $sample));
                             $sample->logInfo("CREATE - ".$sample->tableName, $user);
                         } else {
-                            displayError("Cannot add item", array("message" => $sample->errorMessage));
+                            StaticFunctions::displayError("Cannot add item", array("message" => $sample->errorMessage));
                         }
                     } else {
-                        displayError("Incorrect information", array("fail" => $sample->isDataCorrect()));
+                        StaticFunctions::displayError("Incorrect information", array("fail" => $sample->isDataCorrect()));
                     }
                 } else {
-                    displayError("Empty information", array("miss" => $sample->isEmpty()));
+                    StaticFunctions::displayError("Empty information", array("miss" => $sample->isEmpty()));
                 }
             } else {
                 $variables = array();
@@ -92,12 +91,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         $variables[$column] = (isset($_POST[$column]) ? 'true' : 'false');
                     }
                 }
-                displayError("Uninitialized variables", array("post" => $variables));
+                StaticFunctions::displayError("Uninitialized variables", array("post" => $variables));
             }
         }
     } else {
-        displayError("Connection database fail", array("messageError" => $database->errorMessage));
+        StaticFunctions::displayError("Connection database fail", array("messageError" => $database->errorMessage));
     }
 } else {
-    displayError("Bad request method", array("expected" => "POST", "got" =>$_SERVER["REQUEST_METHOD"]));
+    StaticFunctions::displayError("Bad request method", array("expected" => "POST", "got" =>$_SERVER["REQUEST_METHOD"]));
 }

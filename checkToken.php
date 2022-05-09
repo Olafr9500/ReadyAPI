@@ -8,7 +8,6 @@ header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
 include_once 'config/init.php';
-include_once 'config/function.php';
 
 require 'vendor/autoload.php';
 
@@ -21,33 +20,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $jwt = $matches[1];
             if ($jwt && $jwt != "undefined") {
                 $jwt = JWT::decode($jwt, $keyJWT, array('HS256'));
-                if (checkJWT($jwt)) {
+                if (StaticFunctions::checkJWT($jwt)) {
                     $data = $jwt->data;
                     $user = new User($database->conn);
                     $user->mail = $data->mail;
                     $user->password = $jwt->data->password;
                     if ($user->connection()) {
                         $user->logInfo("CHECK", $user);
-                        displayError("no", array("response" => $user));
+                        StaticFunctions::displayError("no", array("response" => $user));
                     } else {
-                        displayError("Incorrect login token", array("messageError" => $user->errorMessage));
+                        StaticFunctions::displayError("Incorrect login token", array("messageError" => $user->errorMessage));
                         $checkSecure = false;
                     }
                 } else {
-                    displayError("Incorrect login token", array("checkToken"=>"fail"));
+                    StaticFunctions::displayError("Incorrect login token", array("checkToken"=>"fail"));
                     $checkSecure = false;
                 }
             } else {
-                displayError("No token initialized", array("matches" => $matches));
+                StaticFunctions::displayError("No token initialized", array("matches" => $matches));
                 $checkSecure = false;
             }
         } else {
-            displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
+            StaticFunctions::displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
             $checkSecure = false;
         }
     } else {
-        displayError("Connection database fail", array("messageError" => $database->errorMessage));
+        StaticFunctions::displayError("Connection database fail", array("messageError" => $database->errorMessage));
     }
 } else {
-    displayError("Bad request method", array("expected" => "POST", "got" =>$_SERVER["REQUEST_METHOD"]));
+    StaticFunctions::displayError("Bad request method", array("expected" => "POST", "got" =>$_SERVER["REQUEST_METHOD"]));
 }

@@ -8,7 +8,6 @@ header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
 include_once '../config/init.php';
-include_once '../config/function.php';
 
 require '../vendor/autoload.php';
 
@@ -19,30 +18,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $user = null;
     if (!is_null($database->conn)) {
         $checkSecure = true;
-        if (SECURE_API) {
+        if (StaticFunctions::$SECURE_API) {
             if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
                 $jwt = $matches[1];
                 if ($jwt) {
                     $jwt = JWT::decode($jwt, $keyJWT, array('HS256'));
-                    if (checkJWT($jwt)) {
+                    if (StaticFunctions::checkJWT($jwt)) {
                         $data = $jwt->data;
                         $user = new User($database->conn);
                         $user->mail = $data->mail;
                         $user->password = $data->password;
                         if (!$user->connection()) {
-                            displayError("Incorrect login token", array("messageError" => $user->errorMessage));
+                            StaticFunctions::displayError("Incorrect login token", array("messageError" => $user->errorMessage));
                             $checkSecure = false;
                         }
                     } else {
-                        displayError("Incorrect login token", array("checkToken"=>checkJWT($jwt)));
+                        StaticFunctions::displayError("Incorrect login token", array("checkToken"=>StaticFunctions::checkJWT($jwt)));
                         $checkSecure = false;
                     }
                 } else {
-                    displayError("No token initialized", array("matches" => $matches));
+                    StaticFunctions::displayError("No token initialized", array("matches" => $matches));
                     $checkSecure = false;
                 }
             } else {
-                displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
+                StaticFunctions::displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
                 $checkSecure = false;
             }
         }
@@ -53,20 +52,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if ($sample->read()) {
                     if ($sample->delete()) {
                         $sample->logInfo("DELETE - ".$sample->tableName, $user);
-                        displayError("no", array("response" => $sample));
+                        StaticFunctions::displayError("no", array("response" => $sample));
                     } else {
-                        displayError("Cannot delete item", array("message" => $sample->errorMessage));
+                        StaticFunctions::displayError("Cannot delete item", array("message" => $sample->errorMessage));
                     }
                 } else {
-                    displayError("No element with this id", array("messageError" => $sample->errorMessage));
+                    StaticFunctions::displayError("No element with this id", array("messageError" => $sample->errorMessage));
                 }
             } else {
-                displayError("Uninitialized variable", array("post" => array("id" => (isset($_POST["id"]) ? 'true' : 'false'))));
+                StaticFunctions::displayError("Uninitialized variable", array("post" => array("id" => (isset($_POST["id"]) ? 'true' : 'false'))));
             }
         }
     } else {
-        displayError("Connection database fail", array("messageError" => $database->errorMessage));
+        StaticFunctions::displayError("Connection database fail", array("messageError" => $database->errorMessage));
     }
 } else {
-    displayError("Bad request method", array("expected" => "POST", "got" =>$_SERVER["REQUEST_METHOD"]));
+    StaticFunctions::displayError("Bad request method", array("expected" => "POST", "got" =>$_SERVER["REQUEST_METHOD"]));
 }
