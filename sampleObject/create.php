@@ -19,29 +19,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!is_null($database->conn)) {
         $checkSecure = true;
         if (StaticFunctions::$SECURE_API) {
-            if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
-                $jwt = $matches[1];
-                if ($jwt) {
-                    $jwt = JWT::decode($jwt, $keyJWT, array('HS256'));
-                    if (StaticFunctions::checkJWT($jwt)) {
-                        $data = $jwt->data;
-                        $user = new User($database->conn);
-                        $user->mail = $data->mail;
-                        $user->password = $jwt->data->password;
-                        if (!$user->connection()) {
-                            StaticFunctions::displayError("Incorrect login token", array("messageError" => $user->errorMessage));
+            if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+                if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
+                    $jwt = $matches[1];
+                    if ($jwt) {
+                        $jwt = JWT::decode($jwt, $keyJWT, array('HS256'));
+                        if (StaticFunctions::checkJWT($jwt)) {
+                            $data = $jwt->data;
+                            $user = new User($database->conn);
+                            $user->mail = $data->mail;
+                            $user->password = $data->password;
+                            if (!$user->connection()) {
+                                StaticFunctions::displayError("Incorrect login token", array("messageError" => $user->errorMessage));
+                                $checkSecure = false;
+                            }
+                        } else {
+                            StaticFunctions::displayError("Incorrect login token", array("checkToken"=>StaticFunctions::checkJWT($jwt)));
                             $checkSecure = false;
                         }
                     } else {
-                        StaticFunctions::displayError("Incorrect login token", array("checkToken"=>"fail"));
+                        StaticFunctions::displayError("No token initialized", array("matches" => $matches));
                         $checkSecure = false;
                     }
                 } else {
-                    StaticFunctions::displayError("No token initialized", array("matches" => $matches));
+                    StaticFunctions::displayError("Bad format token", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
                     $checkSecure = false;
                 }
             } else {
-                StaticFunctions::displayError("No token initialized", array("Auth" => $_SERVER['HTTP_AUTHORIZATION']));
+                StaticFunctions::displayError("No token provided", []);
                 $checkSecure = false;
             }
         }
