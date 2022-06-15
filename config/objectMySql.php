@@ -133,6 +133,7 @@ class ObjectMySql extends ObjectSQL
                     $queryOrder .= ",";
                 }
             }
+            $insertValue = [];
             foreach ($condition as $key => $row) {
                 $valueRead = $value[$key];
                 switch ($row) {
@@ -146,30 +147,33 @@ class ObjectMySql extends ObjectSQL
                     case "LIKE":
                     case "NOT LIKE":
                         $query .= "`" . $this->table[$index[$key]]["Field"] . "` " . $row . " ?";
+                        $insertValue[] = $valueRead;
                         break;
                     case "IN":
                     case "NOT IN":
                         if ($valueRead instanceof ArrayObject) {
                             $query .= "`" . $this->table[$index[$key]]["Field"] . "` IN (";
-                            $input = "";
-                            $i = 0;
-                            foreach ($valueRead as $row) {
-                                $input .= "?,";
-                                $value[$key + $i] = $row;
-                                $i++;
+                            foreach ($valueRead[$key] as $row) {
+                                $query .= "?,";
+                                $insertValue[] = $row;
                             }
-                            $query = $query . substr($input, 0, strlen($input) - 1) . ")";
+                            $query = substr($query, 0, strlen($query) - 1) . ")";
                         } else {
                             $this->errorMessage = "Mauvais type de données entrée";
                         }
                         break;
                     case "BETWEEN":
                         if (($valueRead instanceof ArrayObject) && (count($valueRead) == 2)) {
-                            $query = "`" . $this->table[$index]["Field"] . "` BETWEEN ? AND ?";
+                            $query = "`" . $this->table[$index[$key]]["Field"] . "` BETWEEN ? AND ?";
                         }
+                        $insertValue = [$valueRead[0], $valueRead[1]];
                         break;
                     case "IS":
-                        $query = "`" . $this->table[$index]["Field"] . "` IS " . $value[$key];
+                        if ($valueRead == "NULL" || $valueRead == null) {
+                            $query .= "`" . $this->table[$index[$key]]["Field"] . "` IS NULL";
+                        } else {
+                            $query .= "`" . $this->table[$index[$key]]["Field"] . "` IS NOT NULL";
+                        }
                         break;
                 }
                 if ($key != (count($index) - 1)) {
@@ -177,7 +181,7 @@ class ObjectMySql extends ObjectSQL
                 }
             }
             $stmt = $this->conn->prepare($query . $queryOrder);
-            if ($stmt->execute($value)) {
+            if ($stmt->execute($insertValue)) {
                 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 if (count($result) > 0) {
                     foreach ($result as $key => $row) {
