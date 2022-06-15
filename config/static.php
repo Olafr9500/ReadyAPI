@@ -7,6 +7,12 @@ class StaticFunctions
     public static function displayError($message, $more)
     {
         echo json_encode(array_merge(array("error" => $message), $more));
+        StaticFunctions::log("SERVER", ($message == "no" ? "SUCCESS" : "ERROR"), ($message == "no" ? "" : $message) . json_encode($more));
+    }
+
+    public static function log($identifiant, $status, $message)
+    {
+        error_log(date("H:i:s") . " (" . $identifiant . ") " . $status . " " . $message . "\n", 3, "./logs/" . date("Y-m-d") . ".log");
     }
     
     public static function checkJWT($jwt)
