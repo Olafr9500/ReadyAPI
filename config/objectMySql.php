@@ -58,7 +58,7 @@ class ObjectMySql extends ObjectSQL
     public function read()
     {
         if (isset($this->id)) {
-            $head = $this->constructHead();
+            $head = $this->constructHead('`');
             $query = "SELECT " . ($head == "" ? "*" : $head) . " FROM `" . $this->tableName . "` WHERE `" . $this->table[0]["Field"] . "` = ?";
             $stmt = $this->conn->prepare($query);
             if ($stmt->execute(array($this->id))) {
@@ -90,7 +90,7 @@ class ObjectMySql extends ObjectSQL
     public function readAll($orderby = [0], $sync = ["asc"])
     {
         if (count($orderby) == count($sync)) {
-            $head = $this->constructHead();
+            $head = $this->constructHead('`');
             $query = "SELECT " . ($head == "" ? "*" : $head) . " FROM `" . $this->tableName . "` ORDER BY";
             foreach ($orderby as $key => $order) {
                 $query .= " `" . $this->table[$order]["Field"] . "` " . $sync[$key];
@@ -124,7 +124,7 @@ class ObjectMySql extends ObjectSQL
     public function readBy($index, $value, $condition, $separator, $orderby = [0], $sync = ["asc"])
     {
         if ((count($orderby) == count($sync)) && (count($index) == count($condition))) {
-            $head = $this->constructHead();
+            $head = $this->constructHead('`');
             $query = "SELECT " . ($head == "" ? "*" : $head) . " FROM `" . $this->tableName . "` WHERE ";
             $queryOrder = " ORDER BY";
             foreach ($orderby as $key => $order) {

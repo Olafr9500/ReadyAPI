@@ -139,13 +139,14 @@ abstract class ObjectSQL implements IConnection
     /**
      * Return format table Field element
      *
+     * @param string $quote Quote character to use in the SQL query
      * @return string
      */
-    public function constructHead()
+    public function constructHead($quote = "")
     {
         $head = "";
         foreach ($this->table as $key => $row) {
-            $head .= $row["Field"] . ($key != count($this->table) - 1 ? "," : "");
+            $head .= $quote.$row["Field"].$quote . ($key != count($this->table) - 1 ? "," : "");
         }
         return $head;
     }
