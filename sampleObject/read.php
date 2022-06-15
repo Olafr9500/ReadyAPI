@@ -86,21 +86,30 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                         exit;
                     }
                 }
-                $value = new ArrayObject();
-                $value = explode(",", $_GET["value"]);
-                foreach ($value as $key => $row) {
-                    if (preg_match("/(\[)/m", $row)) {
-                        $i = 0;
-                        $value[$key+$i]= str_replace("[", "", $row);
-                        $arrayRet = new ArrayObject();
-                        do {
-                            $arrayRet[] = $value[$key+$i];
-                            unset($value[$key+$i]);
-                            array_values($value);
-                            $i++;
-                        } while (!preg_match("/(\])/m", $arrayRet[$i-1]));
-                        $arrayRet[$i-1] = str_replace("]", "", $arrayRet[$i-1]);
-                        $value[$key] = $arrayRet;
+                $valuePOST = new ArrayObject();
+                $valuePOST = explode(",", $_GET["value"]);
+                $value = [];
+                $goNext = true;
+                foreach ($valuePOST as $key => $row) {
+                    if ($goNext) {
+                        if (preg_match("/(\[)/m", $row)) {
+                            $arrayRet = [];
+                            $i = 0;
+                            $arrayRet[] = str_replace("[", "", $row);
+                            do {
+                                $i++;
+                                $arrayRet[] = $valuePOST[$key+$i];
+                                unset($valuePOST[$key+$i]);
+                                array_values($value);
+                            } while (!preg_match("/(\])/m", $arrayRet[count($arrayRet)-1]));
+                            $arrayRet[count($arrayRet)-1] = str_replace("]", "", $arrayRet[count($arrayRet)-1]);
+                            $value[] = $arrayRet;
+                            $goNext = false;
+                        } else {
+                            $value[] = $row;
+                        }
+                    } else {
+                        $goNext = true;
                     }
                 }
                 $separator = isset($_GET["separator"]) ? explode(",", $_GET["separator"]) : ["AND"];
